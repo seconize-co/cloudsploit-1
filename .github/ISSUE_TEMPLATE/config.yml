@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "Report a Bug"
+    url: https://github.com/seconize-co/drc-workspace/issues/new?template=bug-report.yml
+    about: Use this to report bugs found during development or testing.
+  - name: "Report a Customer Bug"
+    url: https://github.com/seconize-co/drc-workspace/issues/new?template=customer-bug-report.yml
+    about: Use this to report a bug experienced by a customer.
+  - name: "Request a Feature"
+    url: https://github.com/seconize-co/drc-workspace/issues/new?template=feature-epic.yml
+    about: Use this to propose a new feature or enhancement.
+  - name: "Module Implementation Task"
+    url: https://github.com/seconize-co/drc-workspace/issues/new?template=module-implementation.yml
+    about: Use this to track implementation work for a specific module within a feature epic.
