@@ -41,7 +41,7 @@ parser.add_argument('--china', {
     help: 'AWS only. Enables AWS China mode.',
     action: 'store_true'
 });
-parser.add_argument('--regions', {
+parser.add_argument('--region', {
     help: 'AWS only. Comma-separated list of regions to limit the scan to, e.g. us-east-1,us-west-2. ' +
         'If omitted, all regions are scanned as usual.'
 });
@@ -80,11 +80,11 @@ let cloudConfig = {};
 
 settings.cloud = 'aws';
 
-// AWS only. Parse "--regions us-east-1,us-west-2" into a deduped, validated
+// AWS only. Parse "--region us-east-1,us-west-2" into a deduped, validated
 // array. Left undefined (the collector's current default behavior) when the
 // flag isn't provided.
-if (settings.regions) {
-    var requestedRegions = settings.regions.split(',')
+if (settings.region) {
+    var requestedRegions = settings.region.split(',')
         .map(function(r) { return r.trim(); })
         .filter(function(r) { return r.length; });
     var uniqueRegions = requestedRegions.filter(function(r, i) { return requestedRegions.indexOf(r) === i; });
@@ -101,7 +101,7 @@ if (settings.regions) {
         process.exit(1);
     }
 
-    settings.regions = uniqueRegions;
+    settings.region = uniqueRegions;
 }
 
 // Now execute the scans using the defined configuration information.

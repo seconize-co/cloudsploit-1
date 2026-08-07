@@ -140,7 +140,7 @@ var engine = function(cloudConfig, settings) {
         paginate: settings.skip_paginate,
         govcloud: settings.govcloud,
         china: settings.china,
-        regions: settings.regions
+        region: settings.region
     }, function(err, collection) {
         if (err || !collection || !Object.keys(collection).length) return console.log(`ERROR: Unable to obtain API metadata: ${err || 'No data returned'}`);
         outputHandler.writeCollection(collection, settings.cloud);

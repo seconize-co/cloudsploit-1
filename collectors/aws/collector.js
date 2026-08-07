@@ -1463,10 +1463,10 @@ var collect = function(AWSConfig, settings, callback) {
                 if (settings.skip_regions &&
                     settings.skip_regions.indexOf(region) > -1 &&
                     globalServices.indexOf(service) === -1) return regionCb();
-                // --regions: limit execution to the selected regions only.
+                // --region: limit execution to the selected regions only.
                 // Global services (S3, IAM, etc.) are exempt, same as skip_regions above.
-                if (settings.regions && settings.regions.length &&
-                    settings.regions.indexOf(region) === -1 &&
+                if (settings.region && settings.region.length &&
+                    settings.region.indexOf(region) === -1 &&
                     globalServices.indexOf(service) === -1) return regionCb();
                 if (!collection[serviceLower][callKey][region]) collection[serviceLower][callKey][region] = {};
 
@@ -1569,10 +1569,10 @@ var collect = function(AWSConfig, settings, callback) {
                         if (settings.skip_regions &&
                             settings.skip_regions.indexOf(region) > -1 &&
                             globalServices.indexOf(service) === -1) return regionCb();
-                        // --regions: limit execution to the selected regions only.
+                        // --region: limit execution to the selected regions only.
                         // Global services (S3, IAM, etc.) are exempt, same as skip_regions above.
-                        if (settings.regions && settings.regions.length &&
-                            settings.regions.indexOf(region) === -1 &&
+                        if (settings.region && settings.region.length &&
+                            settings.region.indexOf(region) === -1 &&
                             globalServices.indexOf(service) === -1) return regionCb();
                         if (!collection[serviceLower][callKey][region]) collection[serviceLower][callKey][region] = {};
 
