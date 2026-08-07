@@ -2,6 +2,7 @@
 
 const { ArgumentParser } = require('argparse');
 const engine = require('./engine');
+const awsHelpers = require('./helpers/aws');
 
 
 console.log(`
@@ -40,6 +41,10 @@ parser.add_argument('--china', {
     help: 'AWS only. Enables AWS China mode.',
     action: 'store_true'
 });
+parser.add_argument('--regions', {
+    help: 'AWS only. Comma-separated list of regions to limit the scan to, e.g. us-east-1,us-west-2. ' +
+        'If omitted, all regions are scanned as usual.'
+});
 parser.add_argument('--csv', { help: 'Output: CSV file' });
 parser.add_argument('--json', { help: 'Output: JSON file' });
 parser.add_argument('--junit', { help: 'Output: Junit file' });
@@ -74,6 +79,30 @@ let settings = parser.parse_args();
 let cloudConfig = {};
 
 settings.cloud = 'aws';
+
+// AWS only. Parse "--regions us-east-1,us-west-2" into a deduped, validated
+// array. Left undefined (the collector's current default behavior) when the
+// flag isn't provided.
+if (settings.regions) {
+    var requestedRegions = settings.regions.split(',')
+        .map(function(r) { return r.trim(); })
+        .filter(function(r) { return r.length; });
+    var uniqueRegions = requestedRegions.filter(function(r, i) { return requestedRegions.indexOf(r) === i; });
+
+    // Reuses the same govcloud/china-aware selector the collector itself
+    // uses, so validation always checks against the correct partition's
+    // region list.
+    var validRegions = awsHelpers.regions(settings).all;
+    var invalidRegions = uniqueRegions.filter(function(r) { return validRegions.indexOf(r) === -1; });
+
+    if (invalidRegions.length) {
+        console.error(`ERROR: Invalid AWS region(s): ${invalidRegions.join(', ')}`);
+        console.error(`Valid regions: ${validRegions.join(', ')}`);
+        process.exit(1);
+    }
+
+    settings.regions = uniqueRegions;
+}
 
 // Now execute the scans using the defined configuration information.
 if (!settings.config) {

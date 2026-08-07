@@ -429,7 +429,9 @@ var processCall = function(OracleConfig, collection, settings, regions, call, se
                 }
             }
 
-            var LocalOracleConfig = JSON.parse(JSON.stringify(OracleConfig));
+            // Shallow clone: only "region"/"service" top-level keys are ever
+            // written onto this copy
+            var LocalOracleConfig = Object.assign({}, OracleConfig);
             LocalOracleConfig.region = region;
             LocalOracleConfig.service = service;
 
@@ -461,7 +463,8 @@ var processCall = function(OracleConfig, collection, settings, regions, call, se
 
 var getRegionSubscription = function(OracleConfig, collection, settings, calls, service, callKey, region, serviceCb) {
 
-    var LocalOracleConfig = JSON.parse(JSON.stringify(OracleConfig));
+    // Shallow clone: only the top-level "service" key is ever written onto this copy
+    var LocalOracleConfig = Object.assign({}, OracleConfig);
     LocalOracleConfig.service = service;
 
     if (!collection[service]) collection[service] = {};

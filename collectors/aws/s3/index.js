@@ -48,7 +48,9 @@ module.exports = function(callKey, forceCloudTrail, AWSConfig, collection, callb
                         // Special case where location constraint is EU - rewrite as eu-west-1
                         if (locData.LocationConstraint == 'EU') locData.LocationConstraint = 'eu-west-1';
                         
-                        var altAWSConfig = JSON.parse(JSON.stringify(AWSConfig));
+                        // Shallow clone: only the top-level "region" key is ever
+                        // written onto this copy
+                        var altAWSConfig = Object.assign({}, AWSConfig);
                         altAWSConfig.region = locData.LocationConstraint;
                         var s3Alt = new AWS.S3(altAWSConfig);
 

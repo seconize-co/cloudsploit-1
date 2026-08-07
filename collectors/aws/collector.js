@@ -22,9 +22,18 @@ var https = require('https');
 var helpers = require(__dirname + '/../../helpers/aws');
 var collectors = require(__dirname + '/../../collectors/aws');
 
-// Override max sockets
-var agent = new https.Agent({maxSockets: 100});
-AWS.config.update({httpOptions: {agent: agent}});
+// Override max sockets and enable keep-alive so repeated calls to the
+// same region/service endpoint reuse the TCP connection instead of
+// paying for a new handshake every time
+var agent = new https.Agent({keepAlive: true, maxSockets: 150});
+// Bound only the TCP connect phase, not the overall request timeout: a
+// healthy connection to an AWS endpoint should establish well within this,
+// so this only cuts short a genuinely hung/blackholed connection attempt
+// (which would otherwise tie up one of the limited region-concurrency slots
+// for a very long time) without risking cutting off any legitimately slow
+// but successful call (e.g. large paginated responses, credential report
+// generation), whose duration is unaffected by connectTimeout.
+AWS.config.update({httpOptions: {agent: agent, connectTimeout: 5000}});
 
 var globalServices = [
     'S3',
@@ -248,12 +257,6 @@ var calls = {
         },
         describeVolumes: {
             property: 'Volumes'
-        },
-        describeSnapshots: {
-            // This call must be overridden because the
-            // default call retrieves every snapshot
-            // available, including public ones
-            override: true
         },
         describeInstances: {
             property: 'Reservations',
@@ -975,6 +978,24 @@ var postcalls = [
                 reliesOnCall: 'describeVpcs',
                 override: true
             },
+            describeSnapshots: {
+                // This call must be overridden because the
+                // default call retrieves every snapshot
+                // available, including public ones. Moved here (relying on
+                // STS:getCallerIdentity, already collected once in the main
+                // calls phase) instead of the main calls object so it no
+                // longer needs its own fresh STS call per region.
+                //
+                // Intentionally no "reliesOnCall": STS only ever runs in a
+                // single region (regions.sts), while EC2 runs in all of
+                // them, so the framework's per-region reliesOnCall guard
+                // (which indexes the dependency by the *current* region)
+                // would incorrectly skip every EC2 region except the one
+                // matching STS's region. The account-ID lookup is instead
+                // done defensively inside the collector itself.
+                reliesOnService: 'sts',
+                override: true
+            },
             describeSnapshotAttribute: {
                 reliesOnService: 'ec2',
                 reliesOnCall: 'describeSnapshots',
@@ -1149,6 +1170,22 @@ var postcalls = [
                 filterKey: 'UserName',
                 filterValue: 'UserName',
                 rateLimit: 100
+            },
+            // Moved up from the (formerly) second postcalls phase: these only
+            // depend on main-calls data (listPolicies/listRoles), not on
+            // anything collected elsewhere in this phase, so they no longer
+            // need to wait for the entire phase above to finish first.
+            getPolicy: {
+                reliesOnService: 'iam',
+                reliesOnCall: 'listPolicies',
+                filterKey: 'PolicyArn',
+                filterValue: 'Arn'
+            },
+            getRole: {
+                reliesOnService: 'iam',
+                reliesOnCall: 'listRoles',
+                filterKey: 'RoleName',
+                filterValue: 'RoleName'
             }
         },
         Kinesis: {
@@ -1339,6 +1376,17 @@ var postcalls = [
             }
         },
         IAM: {
+            // getPolicyVersion only depends on IAM.getPolicy, which now runs
+            // in the phase above - safe to run in this same phase rather
+            // than waiting for an entire extra serial phase. Listed first so
+            // it's scheduled as soon as this phase starts, rather than
+            // behind getUserPolicy/getGroupPolicy/getRolePolicy (which it
+            // does not depend on).
+            getPolicyVersion: {
+                reliesOnService: 'iam',
+                reliesOnCall: 'listPolicies',
+                override: true
+            },
             getUserPolicy: {
                 reliesOnService: 'iam',
                 reliesOnCall: 'listUsers',
@@ -1353,33 +1401,12 @@ var postcalls = [
                 reliesOnService: 'iam',
                 reliesOnCall: 'listRoles',
                 override: true
-            },
-            getPolicy: {
-                reliesOnService: 'iam',
-                reliesOnCall: 'listPolicies',
-                filterKey: 'PolicyArn',
-                filterValue: 'Arn'
-            },
-            getRole: {
-                reliesOnService: 'iam',
-                reliesOnCall: 'listRoles',
-                filterKey: 'RoleName',
-                filterValue: 'RoleName'
             }
         },
         EKS:{
             describeNodegroups: {
                 reliesOnService: 'eks',
                 reliesOnCall: 'listClusters',
-                override: true
-            }
-        }
-    },
-    {
-        IAM: {
-            getPolicyVersion: {
-                reliesOnService: 'iam',
-                reliesOnCall: 'listPolicies',
                 override: true
             }
         }
@@ -1405,13 +1432,23 @@ var collect = function(AWSConfig, settings, callback) {
 
     var collection = {};
 
+    // Profiling: how long each service:call spent waiting on AWS, across all
+    // of its regions. Printed as a "slowest 15" summary once collection is done.
+    var apiCallTimings = [];
+
     async.eachOfLimit(calls, 10, function(call, service, serviceCb) {
         var serviceLower = service.toLowerCase();
         if (!collection[serviceLower]) collection[serviceLower] = {};
 
         // Loop through each of the service's functions
         async.eachOfLimit(call, 15, function(callObj, callKey, callCb) {
-            if (settings.api_calls && settings.api_calls.indexOf(service + ':' + callKey) === -1) return callCb();
+            var callTimingStart = Date.now();
+            var timedCallCb = function() { // eslint-disable-line no-inner-declarations
+                apiCallTimings.push({name: service + ':' + callKey, ms: Date.now() - callTimingStart});
+                callCb();
+            };
+
+            if (settings.api_calls && settings.api_calls.indexOf(service + ':' + callKey) === -1) return timedCallCb();
             if (!collection[serviceLower][callKey]) collection[serviceLower][callKey] = {};
 
             var callRegions;
@@ -1426,9 +1463,16 @@ var collect = function(AWSConfig, settings, callback) {
                 if (settings.skip_regions &&
                     settings.skip_regions.indexOf(region) > -1 &&
                     globalServices.indexOf(service) === -1) return regionCb();
+                // --regions: limit execution to the selected regions only.
+                // Global services (S3, IAM, etc.) are exempt, same as skip_regions above.
+                if (settings.regions && settings.regions.length &&
+                    settings.regions.indexOf(region) === -1 &&
+                    globalServices.indexOf(service) === -1) return regionCb();
                 if (!collection[serviceLower][callKey][region]) collection[serviceLower][callKey][region] = {};
 
-                var LocalAWSConfig = JSON.parse(JSON.stringify(AWSConfig));
+                // Shallow clone: only the top-level "region" key is ever written
+                // onto this copy, so a full JSON deep clone isn't needed here
+                var LocalAWSConfig = Object.assign({}, AWSConfig);
                 LocalAWSConfig.region = region;
 
                 if (callObj.override) {
@@ -1442,7 +1486,16 @@ var collect = function(AWSConfig, settings, callback) {
                         }
                     });
                 } else {
-                    var executor = debugMode ? (AWSXRay.captureAWSClient(new AWS[service](LocalAWSConfig))) : new AWS[service](LocalAWSConfig);
+                    var executor;
+                    try {
+                        executor = debugMode ? (AWSXRay.captureAWSClient(new AWS[service](LocalAWSConfig))) : new AWS[service](LocalAWSConfig);
+                    } catch (e) {
+                        // Service name doesn't map to a real SDK class (e.g. a retired
+                        // API on the current SDK version) - skip this call instead of
+                        // crashing the whole scan
+                        collection[serviceLower][callKey][region].err = e;
+                        return regionCb();
+                    }
                     var paginating = false;
                     var executorCb = function(err, data) {
                         if (err) collection[serviceLower][callKey][region].err = err;
@@ -1479,7 +1532,7 @@ var collect = function(AWSConfig, settings, callback) {
                     function execute(nextTokens) { // eslint-disable-line no-inner-declarations
                         // Each region needs its own local copy of callObj.params
                         // so that the injection of the NextToken doesn't break other calls
-                        var localParams = JSON.parse(JSON.stringify(callObj.params || {}));
+                        var localParams = Object.assign({}, callObj.params || {});
                         if (nextTokens) localParams[nextTokens[0]] = nextTokens[1];
 
                         if (callObj.params || nextTokens) {
@@ -1492,7 +1545,7 @@ var collect = function(AWSConfig, settings, callback) {
                     execute();
                 }
             }, function() {
-                callCb();
+                timedCallCb();
             });
         }, function() {
             serviceCb();
@@ -1506,11 +1559,20 @@ var collect = function(AWSConfig, settings, callback) {
 
                 async.eachOfLimit(serviceObj, 1, function(callObj, callKey, callCb) {
                     if (settings.api_calls && settings.api_calls.indexOf(service + ':' + callKey) === -1) return callCb();
+                    // Entries with no override and no reliesOnService carry only
+                    // integration metadata - there's no real call to make, so skip
+                    // immediately instead of falling through to an attempted call
+                    if (!callObj.override && !callObj.reliesOnService) return callCb();
                     if (!collection[serviceLower][callKey]) collection[serviceLower][callKey] = {};
 
                     async.eachLimit(regions[serviceLower], helpers.MAX_REGIONS_AT_A_TIME, function(region, regionCb) {
                         if (settings.skip_regions &&
                             settings.skip_regions.indexOf(region) > -1 &&
+                            globalServices.indexOf(service) === -1) return regionCb();
+                        // --regions: limit execution to the selected regions only.
+                        // Global services (S3, IAM, etc.) are exempt, same as skip_regions above.
+                        if (settings.regions && settings.regions.length &&
+                            settings.regions.indexOf(region) === -1 &&
                             globalServices.indexOf(service) === -1) return regionCb();
                         if (!collection[serviceLower][callKey][region]) collection[serviceLower][callKey][region] = {};
 
@@ -1525,7 +1587,9 @@ var collect = function(AWSConfig, settings, callback) {
                             !collection[callObj.reliesOnService][callObj.reliesOnCall][region].data.length))
                             return regionCb();
 
-                        var LocalAWSConfig = JSON.parse(JSON.stringify(AWSConfig));
+                        // Shallow clone: only "region"/"signatureVersion" top-level keys
+                        // are ever written onto this copy
+                        var LocalAWSConfig = Object.assign({}, AWSConfig);
                         if (callObj.deleteRegion) {
                             //delete LocalAWSConfig.region;
                             LocalAWSConfig.region = settings.govcloud ? 'us-gov-west-1' : settings.china ? 'cn-north-1' : 'us-east-1';
@@ -1545,7 +1609,15 @@ var collect = function(AWSConfig, settings, callback) {
                                 }
                             });
                         } else {
-                            var executor = debugMode ? (AWSXRay.captureAWSClient(new AWS[service](LocalAWSConfig))) : new AWS[service](LocalAWSConfig);
+                            var executor;
+                            try {
+                                executor = debugMode ? (AWSXRay.captureAWSClient(new AWS[service](LocalAWSConfig))) : new AWS[service](LocalAWSConfig);
+                            } catch (e) {
+                                // Service name doesn't map to a real SDK class - skip
+                                // this call instead of crashing the whole scan
+                                collection[serviceLower][callKey][LocalAWSConfig.region].err = e;
+                                return regionCb();
+                            }
 
                             if (!collection[callObj.reliesOnService][callObj.reliesOnCall][LocalAWSConfig.region] ||
                                 !collection[callObj.reliesOnService][callObj.reliesOnCall][LocalAWSConfig.region].data) {
@@ -1615,6 +1687,13 @@ var collect = function(AWSConfig, settings, callback) {
                 postcallCb();
             });
         }, function() {
+            if (apiCallTimings.length) {
+                var slowest = apiCallTimings.slice().sort(function(a, b) { return b.ms - a.ms; }).slice(0, 15);
+                console.log('INFO: Slowest 15 API calls:');
+                slowest.forEach(function(t) {
+                    console.log(`  ${t.name}: ${t.ms}ms`);
+                });
+            }
             callback(null, collection);
         });
     });

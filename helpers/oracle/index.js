@@ -134,7 +134,7 @@ function OracleExecutor(OracleConfig) {
 var helpers = {
     regions: regions,
     OracleExecutor: OracleExecutor,
-    MAX_REGIONS_AT_A_TIME: 6
+    MAX_REGIONS_AT_A_TIME: 10
 };
 
 for (var s in shared) helpers[s] = shared[s];

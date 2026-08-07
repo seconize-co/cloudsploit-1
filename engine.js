@@ -139,7 +139,8 @@ var engine = function(cloudConfig, settings) {
         api_calls: apiCalls,
         paginate: settings.skip_paginate,
         govcloud: settings.govcloud,
-        china: settings.china
+        china: settings.china,
+        regions: settings.regions
     }, function(err, collection) {
         if (err || !collection || !Object.keys(collection).length) return console.log(`ERROR: Unable to obtain API metadata: ${err || 'No data returned'}`);
         outputHandler.writeCollection(collection, settings.cloud);
@@ -148,12 +149,19 @@ var engine = function(cloudConfig, settings) {
         console.log('INFO: Analysis complete. Scan report to follow...');
 
         var maximumStatus = 0;
-        
+
+        // Profiling: how long each plugin took to run, printed as a
+        // "slowest 15" summary once all plugins have finished.
+        var pluginTimings = [];
+
         function executePlugins(cloudRemediateConfig) {
             async.mapValuesLimit(plugins, 10, function(plugin, key, pluginDone) {
                 if (skippedPlugins.indexOf(key) > -1) return pluginDone(null, 0);
-    
+
+                var pluginStart = Date.now();
+
                 var postRun = function(err, results) {
+                    pluginTimings.push({name: plugin.title || key, ms: Date.now() - pluginStart});
                     if (err) return console.log(`ERROR: ${err}`);
                     if (!results || !results.length) {
                         console.log(`Plugin ${plugin.title} returned no results. There may be a problem with this plugin.`);
@@ -231,6 +239,13 @@ var engine = function(cloudConfig, settings) {
                     // the exit code depend on the results (useful for integration with CI systems)
                     console.log(`INFO: Exiting with exit code: ${maximumStatus}`);
                     process.exitCode = maximumStatus;
+                }
+                if (pluginTimings.length) {
+                    var slowestPlugins = pluginTimings.slice().sort(function(a, b) { return b.ms - a.ms; }).slice(0, 15);
+                    console.log('INFO: Slowest 15 plugins:');
+                    slowestPlugins.forEach(function(t) {
+                        console.log(`  ${t.name}: ${t.ms}ms`);
+                    });
                 }
                 console.log('INFO: Scan complete');
             });

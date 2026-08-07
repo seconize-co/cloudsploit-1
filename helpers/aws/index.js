@@ -12,7 +12,7 @@ var regions = function(settings) {
 
 var helpers = {
     regions: regions,
-    MAX_REGIONS_AT_A_TIME: 6,
+    MAX_REGIONS_AT_A_TIME: 10,
     CLOUDSPLOIT_EVENTS_BUCKET: 'cloudsploit-engine-trails',
     CLOUDSPLOIT_EVENTS_SNS: 'aqua-cspm-sns-',
     ENCRYPTION_LEVELS: ['none', 'sse', 'awskms', 'awscmk', 'externalcmk', 'cloudhsm'],

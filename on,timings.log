@@ -1,0 +1,269 @@
+warning: in the working copy of 'collectors/aws/ec2/describeSnapshots.js', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/collectors/aws/collector.js b/collectors/aws/collector.js[m
+[1mindex a05a567..dee015a 100644[m
+[1m--- a/collectors/aws/collector.js[m
+[1m+++ b/collectors/aws/collector.js[m
+[36m@@ -22,9 +22,18 @@[m [mvar https = require('https');[m
+ var helpers = require(__dirname + '/../../helpers/aws');[m
+ var collectors = require(__dirname + '/../../collectors/aws');[m
+ [m
+[31m-// Override max sockets[m
+[31m-var agent = new https.Agent({maxSockets: 100});[m
+[31m-AWS.config.update({httpOptions: {agent: agent}});[m
+[32m+[m[32m// Override max sockets and enable keep-alive so repeated calls to the[m
+[32m+[m[32m// same region/service endpoint reuse the TCP connection instead of[m
+[32m+[m[32m// paying for a new handshake every time[m
+[32m+[m[32mvar agent = new https.Agent({keepAlive: true, maxSockets: 150});[m
+[32m+[m[32m// Bound only the TCP connect phase, not the overall request timeout: a[m
+[32m+[m[32m// healthy connection to an AWS endpoint should establish well within this,[m
+[32m+[m[32m// so this only cuts short a genuinely hung/blackholed connection attempt[m
+[32m+[m[32m// (which would otherwise tie up one of the limited region-concurrency slots[m
+[32m+[m[32m// for a very long time) without risking cutting off any legitimately slow[m
+[32m+[m[32m// but successful call (e.g. large paginated responses, credential report[m
+[32m+[m[32m// generation), whose duration is unaffected by connectTimeout.[m
+[32m+[m[32mAWS.config.update({httpOptions: {agent: agent, connectTimeout: 5000}});[m
+ [m
+ var globalServices = [[m
+     'S3',[m
+[36m@@ -249,12 +258,6 @@[m [mvar calls = {[m
+         describeVolumes: {[m
+             property: 'Volumes'[m
+         },[m
+[31m-        describeSnapshots: {[m
+[31m-            // This call must be overridden because the[m
+[31m-            // default call retrieves every snapshot[m
+[31m-            // available, including public ones[m
+[31m-            override: true[m
+[31m-        },[m
+         describeInstances: {[m
+             property: 'Reservations',[m
+             paginate: 'NextToken',[m
+[36m@@ -975,6 +978,24 @@[m [mvar postcalls = [[m
+                 reliesOnCall: 'describeVpcs',[m
+                 override: true[m
+             },[m
+[32m+[m[32m            describeSnapshots: {[m
+[32m+[m[32m                // This call must be overridden because the[m
+[32m+[m[32m                // default call retrieves every snapshot[m
+[32m+[m[32m                // available, including public ones. Moved here (relying on[m
+[32m+[m[32m                // STS:getCallerIdentity, already collected once in the main[m
+[32m+[m[32m                // calls phase) instead of the main calls object so it no[m
+[32m+[m[32m                // longer needs its own fresh STS call per region.[m
+[32m+[m[32m                //[m
+[32m+[m[32m                // Intentionally no "reliesOnCall": STS only ever runs in a[m
+[32m+[m[32m                // single region (regions.sts), while EC2 runs in all of[m
+[32m+[m[32m                // them, so the framework's per-region reliesOnCall guard[m
+[32m+[m[32m                // (which indexes the dependency by the *current* region)[m
+[32m+[m[32m                // would incorrectly skip every EC2 region except the one[m
+[32m+[m[32m                // matching STS's region. The account-ID lookup is instead[m
+[32m+[m[32m                // done defensively inside the collector itself.[m
+[32m+[m[32m                reliesOnService: 'sts',[m
+[32m+[m[32m                override: true[m
+[32m+[m[32m            },[m
+             describeSnapshotAttribute: {[m
+                 reliesOnService: 'ec2',[m
+                 reliesOnCall: 'describeSnapshots',[m
+[36m@@ -1149,6 +1170,22 @@[m [mvar postcalls = [[m
+                 filterKey: 'UserName',[m
+                 filterValue: 'UserName',[m
+                 rateLimit: 100[m
+[32m+[m[32m            },[m
+[32m+[m[32m            // Moved up from the (formerly) second postcalls phase: these only[m
+[32m+[m[32m            // depend on main-calls data (listPolicies/listRoles), not on[m
+[32m+[m[32m            // anything collected elsewhere in this phase, so they no longer[m
+[32m+[m[32m            // need to wait for the entire phase above to finish first.[m
+[32m+[m[32m            getPolicy: {[m
+[32m+[m[32m                reliesOnService: 'iam',[m
+[32m+[m[32m                reliesOnCall: 'listPolicies',[m
+[32m+[m[32m                filterKey: 'PolicyArn',[m
+[32m+[m[32m                filterValue: 'Arn'[m
+[32m+[m[32m            },[m
+[32m+[m[32m            getRole: {[m
+[32m+[m[32m                reliesOnService: 'iam',[m
+[32m+[m[32m                reliesOnCall: 'listRoles',[m
+[32m+[m[32m                filterKey: 'RoleName',[m
+[32m+[m[32m                filterValue: 'RoleName'[m
+             }[m
+         },[m
+         Kinesis: {[m
+[36m@@ -1339,6 +1376,17 @@[m [mvar postcalls = [[m
+             }[m
+         },[m
+         IAM: {[m
+[32m+[m[32m            // getPolicyVersion only depends on IAM.getPolicy, which now runs[m
+[32m+[m[32m            // in the phase above - safe to run in this same phase rather[m
+[32m+[m[32m            // than waiting for an entire extra serial phase. Listed first so[m
+[32m+[m[32m            // it's scheduled as soon as this phase starts, rather than[m
+[32m+[m[32m            // behind getUserPolicy/getGroupPolicy/getRolePolicy (which it[m
+[32m+[m[32m            // does not depend on).[m
+[32m+[m[32m            getPolicyVersion: {[m
+[32m+[m[32m                reliesOnService: 'iam',[m
+[32m+[m[32m                reliesOnCall: 'listPolicies',[m
+[32m+[m[32m                override: true[m
+[32m+[m[32m            },[m
+             getUserPolicy: {[m
+                 reliesOnService: 'iam',[m
+                 reliesOnCall: 'listUsers',[m
+[36m@@ -1353,18 +1401,6 @@[m [mvar postcalls = [[m
+                 reliesOnService: 'iam',[m
+                 reliesOnCall: 'listRoles',[m
+                 override: true[m
+[31m-            },[m
+[31m-            getPolicy: {[m
+[31m-                reliesOnService: 'iam',[m
+[31m-                reliesOnCall: 'listPolicies',[m
+[31m-                filterKey: 'PolicyArn',[m
+[31m-                filterValue: 'Arn'[m
+[31m-            },[m
+[31m-            getRole: {[m
+[31m-                reliesOnService: 'iam',[m
+[31m-                reliesOnCall: 'listRoles',[m
+[31m-                filterKey: 'RoleName',[m
+[31m-                filterValue: 'RoleName'[m
+             }[m
+         },[m
+         EKS:{[m
+[36m@@ -1374,15 +1410,6 @@[m [mvar postcalls = [[m
+                 override: true[m
+             }[m
+         }[m
+[31m-    },[m
+[31m-    {[m
+[31m-        IAM: {[m
+[31m-            getPolicyVersion: {[m
+[31m-                reliesOnService: 'iam',[m
+[31m-                reliesOnCall: 'listPolicies',[m
+[31m-                override: true[m
+[31m-            }[m
+[31m-        }[m
+     }[m
+ ];[m
+ [m
+[36m@@ -1405,13 +1432,23 @@[m [mvar collect = function(AWSConfig, settings, callback) {[m
+ [m
+     var collection = {};[m
+ [m
+[32m+[m[32m    // Profiling: how long each service:call spent waiting on AWS, across all[m
+[32m+[m[32m    // of its regions. Printed as a "slowest 15" summary once collection is done.[m
+[32m+[m[32m    var apiCallTimings = [];[m
+[32m+[m
+     async.eachOfLimit(calls, 10, function(call, service, serviceCb) {[m
+         var serviceLower = service.toLowerCase();[m
+         if (!collection[serviceLower]) collection[serviceLower] = {};[m
+ [m
+         // Loop through each of the service's functions[m
+         async.eachOfLimit(call, 15, function(callObj, callKey, callCb) {[m
+[31m-            if (settings.api_calls && settings.api_calls.indexOf(service + ':' + callKey) === -1) return callCb();[m
+[32m+[m[32m            var callTimingStart = Date.now();[m
+[32m+[m[32m            var timedCallCb = function() { // eslint-disable-line no-inner-declarations[m
+[32m+[m[32m                apiCallTimings.push({name: service + ':' + callKey, ms: Date.now() - callTimingStart});[m
+[32m+[m[32m                callCb();[m
+[32m+[m[32m            };[m
+[32m+[m
+[32m+[m[32m            if (settings.api_calls && settings.api_calls.indexOf(service + ':' + callKey) === -1) return timedCallCb();[m
+             if (!collection[serviceLower][callKey]) collection[serviceLower][callKey] = {};[m
+ [m
+             var callRegions;[m
+[36m@@ -1426,9 +1463,16 @@[m [mvar collect = function(AWSConfig, settings, callback) {[m
+                 if (settings.skip_regions &&[m
+                     settings.skip_regions.indexOf(region) > -1 &&[m
+                     globalServices.indexOf(service) === -1) return regionCb();[m
+[32m+[m[32m                // --regions: limit execution to the selected regions only.[m
+[32m+[m[32m                // Global services (S3, IAM, etc.) are exempt, same as skip_regions above.[m
+[32m+[m[32m                if (settings.regions && settings.regions.length &&[m
+[32m+[m[32m                    settings.regions.indexOf(region) === -1 &&[m
+[32m+[m[32m                    globalServices.indexOf(service) === -1) return regionCb();[m
+                 if (!collection[serviceLower][callKey][region]) collection[serviceLower][callKey][region] = {};[m
+ [m
+[31m-                var LocalAWSConfig = JSON.parse(JSON.stringify(AWSConfig));[m
+[32m+[m[32m                // Shallow clone: only the top-level "region" key is ever written[m
+[32m+[m[32m                // onto this copy, so a full JSON deep clone isn't needed here[m
+[32m+[m[32m                var LocalAWSConfig = Object.assign({}, AWSConfig);[m
+                 LocalAWSConfig.region = region;[m
+ [m
+                 if (callObj.override) {[m
+[36m@@ -1442,7 +1486,16 @@[m [mvar collect = function(AWSConfig, settings, callback) {[m
+                         }[m
+                     });[m
+                 } else {[m
+[31m-                    var executor = debugMode ? (AWSXRay.captureAWSClient(new AWS[service](LocalAWSConfig))) : new AWS[service](LocalAWSConfig);[m
+[32m+[m[32m                    var executor;[m
+[32m+[m[32m                    try {[m
+[32m+[m[32m                        executor = debugMode ? (AWSXRay.captureAWSClient(new AWS[service](LocalAWSConfig))) : new AWS[service](LocalAWSConfig);[m
+[32m+[m[32m                    } catch (e) {[m
+[32m+[m[32m                        // Service name doesn't map to a real SDK class (e.g. a retired[m
+[32m+[m[32m                        // API on the current SDK version) - skip this call instead of[m
+[32m+[m[32m                        // crashing the whole scan[m
+[32m+[m[32m                        collection[serviceLower][callKey][region].err = e;[m
+[32m+[m[32m                        return regionCb();[m
+[32m+[m[32m                    }[m
+                     var paginating = false;[m
+                     var executorCb = function(err, data) {[m
+                         if (err) collection[serviceLower][callKey][region].err = err;[m
+[36m@@ -1479,7 +1532,7 @@[m [mvar collect = function(AWSConfig, settings, callback) {[m
+                     function execute(nextTokens) { // eslint-disable-line no-inner-declarations[m
+                         // Each region needs its own local copy of callObj.params[m
+                         // so that the injection of the NextToken doesn't break other calls[m
+[31m-                        var localParams = JSON.parse(JSON.stringify(callObj.params || {}));[m
+[32m+[m[32m                        var localParams = Object.assign({}, callObj.params || {});[m
+                         if (nextTokens) localParams[nextTokens[0]] = nextTokens[1];[m
+ [m
+                         if (callObj.params || nextTokens) {[m
+[36m@@ -1492,7 +1545,7 @@[m [mvar collect = function(AWSConfig, settings, callback) {[m
+                     execute();[m
+                 }[m
+             }, function() {[m
+[31m-                callCb();[m
+[32m+[m[32m                timedCallCb();[m
+             });[m
+         }, function() {[m
+             serviceCb();[m
+[36m@@ -1506,12 +1559,21 @@[m [mvar collect = function(AWSConfig, settings, callback) {[m
+ [m
+                 async.eachOfLimit(serviceObj, 1, function(callObj, callKey, callCb) {[m
+                     if (settings.api_calls && settings.api_calls.indexOf(service + ':' + callKey) === -1) return callCb();[m
+[32m+[m[32m                    // Entries with no override and no reliesOnService carry only[m
+[32m+[m[32m                    // integration metadata - there's no real call to make, so skip[m
+[32m+[m[32m                    // immediately instead of falling through to an attempted call[m
+[32m+[m[32m                    if (!callObj.override && !callObj.reliesOnService) return callCb();[m
+                     if (!collection[serviceLower][callKey]) collection[serviceLower][callKey] = {};[m
+ [m
+                     async.eachLimit(regions[serviceLower], helpers.MAX_REGIONS_AT_A_TIME, function(region, regionCb) {[m
+                         if (settings.skip_regions &&[m
+                             settings.skip_regions.indexOf(region) > -1 &&[m
+                             globalServices.indexOf(service) === -1) return regionCb();[m
+[32m+[m[32m                        // --regions: limit execution to the selected regions only.[m
+[32m+[m[32m                        // Global services (S3, IAM, etc.) are exempt, same as skip_regions above.[m
+[32m+[m[32m                        if (settings.regions && settings.regions.length &&[m
+[32m+[m[32m                            settings.regions.indexOf(region) === -1 &&[m
+[32m+[m[32m                            globalServices.indexOf(service) === -1) return regionCb();[m
+                         if (!collection[serviceLower][callKey][region]) collection[serviceLower][callKey][region] = {};[m
+ [m
+                         // Ensure pre-requisites are met[m
+[36m@@ -1525,7 +1587,9 @@[m [mvar collect = function(AWSConfig, settings, callback) {[m
+                             !collection[callObj.reliesOnService][callObj.reliesOnCall][region].data.length))[m
+                             return regionCb();[m
+ [m
+[31m-                        var LocalAWSConfig = JSON.parse(JSON.stringify(AWSConfig));[m
+[32m+[m[32m                        // Shallow clone: only "region"/"signatureVersion" top-level keys[m
+[32m+[m[32m                        // are ever written onto this copy[m
+[32m+[m[32m                        var LocalAWSConfig = Object.assign({}, AWSConfig);[m
+                         if (callObj.deleteRegion) {[m
+                             //delete LocalAWSConfig.region;[m
+                             LocalAWSConfig.region = settings.govcloud ? 'us-gov-west-1' : settings.china ? 'cn-north-1' : 'us-east-1';[m
+[36m@@ -1545,7 +1609,15 @@[m [mvar collect = function(AWSConfig, settings, callback) {[m
+                                 }[m
+                             });[m
+                         } else {[m
+[31m-                            var executor = debugMode ? (AWSXRay.captureAWSClient(new AWS[service](LocalAWSConfig))) : new AWS[service](LocalAWSConfig);[m
+[32m+[m[32m                            var executor;[m
+[32m+[m[32m                            try {[m
+[32m+[m[32m                                executor = debugMode ? (AWSXRay.captureAWSClient(new AWS[service](LocalAWSConfig))) : new AWS[service](LocalAWSConfig);[m
+[32m+[m[32m                            } catch (e) {[m
+[32m+[m[32m                                // Service name doesn't map to a real SDK class - skip[m
+[32m+[m[32m                                // this call instead of crashing the whole scan[m
+[32m+[m[32m                                collection[serviceLower][callKey][LocalAWSConfig.region].err = e;[m
+[32m+[m[32m                                return regionCb();[m
+[32m+[m[32m                            }[m
+ [m
+                             if (!collection[callObj.reliesOnService][callObj.reliesOn
