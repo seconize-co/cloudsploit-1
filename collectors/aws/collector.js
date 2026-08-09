@@ -40,8 +40,7 @@ var globalServices = [
     'IAM',
     'CloudFront',
     'Route53',
-    'Route53Domains',
-    'WAFRegional'
+    'Route53Domains'
 ];
 
 var calls = {
@@ -1437,6 +1436,16 @@ var collect = function(AWSConfig, settings, callback) {
     var apiCallTimings = [];
 
     async.eachOfLimit(calls, 10, function(call, service, serviceCb) {
+        console.log(`\n========== START SERVICE: ${service} ==========`);
+        var serviceStart = Date.now();
+
+        // One SDK client per (service, region), shared across all of this
+        // service's calls instead of constructing a fresh client per call.
+        // Safe here because nothing in the main "calls" definitions (unlike
+        // postcalls) overrides signatureVersion or region per callObj, so
+        // every call for a given service+region builds an identical client.
+        var serviceClients = {};
+
         var serviceLower = service.toLowerCase();
         if (!collection[serviceLower]) collection[serviceLower] = {};
 
@@ -1460,6 +1469,7 @@ var collect = function(AWSConfig, settings, callback) {
             }
 
             async.eachLimit(callRegions, helpers.MAX_REGIONS_AT_A_TIME, function(region, regionCb) {
+                console.log(`[REGION] ${service} -> ${region}`);
                 if (settings.skip_regions &&
                     settings.skip_regions.indexOf(region) > -1 &&
                     globalServices.indexOf(service) === -1) return regionCb();
@@ -1476,7 +1486,10 @@ var collect = function(AWSConfig, settings, callback) {
                 LocalAWSConfig.region = region;
 
                 if (callObj.override) {
+                    var apiStart = Date.now();
+                    console.log(`[API START] ${service}:${callKey} (${region})`);
                     collectors[serviceLower][callKey](LocalAWSConfig, collection, function() {
+                        console.log(`[API END] ${service}:${callKey} (${region}) took ${Date.now() - apiStart} ms`);
                         if (callObj.rateLimit) {
                             setTimeout(function() {
                                 regionCb();
@@ -1488,7 +1501,10 @@ var collect = function(AWSConfig, settings, callback) {
                 } else {
                     var executor;
                     try {
-                        executor = debugMode ? (AWSXRay.captureAWSClient(new AWS[service](LocalAWSConfig))) : new AWS[service](LocalAWSConfig);
+                        if (!serviceClients[region]) {
+                            serviceClients[region] = debugMode ? (AWSXRay.captureAWSClient(new AWS[service](LocalAWSConfig))) : new AWS[service](LocalAWSConfig);
+                        }
+                        executor = serviceClients[region];
                     } catch (e) {
                         // Service name doesn't map to a real SDK class (e.g. a retired
                         // API on the current SDK version) - skip this call instead of
@@ -1497,7 +1513,9 @@ var collect = function(AWSConfig, settings, callback) {
                         return regionCb();
                     }
                     var paginating = false;
+                    var apiStart = Date.now();
                     var executorCb = function(err, data) {
+                        console.log(`[API END] ${service}:${callKey} (${region}) took ${Date.now() - apiStart} ms`);
                         if (err) collection[serviceLower][callKey][region].err = err;
 
                         if (!data) return regionCb();
@@ -1535,6 +1553,7 @@ var collect = function(AWSConfig, settings, callback) {
                         var localParams = Object.assign({}, callObj.params || {});
                         if (nextTokens) localParams[nextTokens[0]] = nextTokens[1];
 
+                        console.log(`[API START] ${service}:${callKey} (${region})`);
                         if (callObj.params || nextTokens) {
                             executor[callKey](localParams, executorCb);
                         } else {
@@ -1548,6 +1567,9 @@ var collect = function(AWSConfig, settings, callback) {
                 timedCallCb();
             });
         }, function() {
+            console.log(
+                `========== END SERVICE: ${service} (${Date.now() - serviceStart} ms) ==========`
+            );
             serviceCb();
         });
     }, function() {
@@ -1624,7 +1646,7 @@ var collect = function(AWSConfig, settings, callback) {
                                 return regionCb();
                             }
 
-                            async.eachLimit(collection[callObj.reliesOnService][callObj.reliesOnCall][LocalAWSConfig.region].data, 10, function(dep, depCb) {
+                            async.eachLimit(collection[callObj.reliesOnService][callObj.reliesOnCall][LocalAWSConfig.region].data, 15, function(dep, depCb) {
                                 if (callObj.checkMultiple) {
                                     async.each(callObj.checkMultiple, function(thisCheck, tcCb){
                                         collection[serviceLower][callKey][LocalAWSConfig.region][dep[callObj.filterValue]] = {};

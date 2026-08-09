@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const path = require('path');
 const { ArgumentParser } = require('argparse');
 const engine = require('./engine');
 const awsHelpers = require('./helpers/aws');
@@ -125,9 +126,13 @@ if (settings.compliance && settings.compliance.indexOf('cis') > -1) {
 console.log(`INFO: Using CloudSploit config file: ${settings.config}`);
 
 try {
-    var config = require(settings.config);
+    // A bare filename like "config.js" is a node_modules lookup to require(),
+    // not a relative file path - resolve against cwd so --config config.js
+    // works the same as --config ./config.js or an absolute path.
+    var config = require(path.resolve(process.cwd(), settings.config));
 } catch (e) {
     console.error('ERROR: Config file could not be loaded. Please ensure you have copied the config_example.js file to config.js');
+    console.error(e);
     process.exit(1);
 }
 
