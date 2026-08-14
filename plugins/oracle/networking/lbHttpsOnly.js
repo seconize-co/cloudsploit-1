@@ -24,7 +24,7 @@ module.exports = {
     run: function(cache, settings, callback) {
         var results = [];
         var source = {};
-		var regions = helpers.regions(settings.govcloud);
+        var regions = helpers.regions(settings.govcloud);
 
         async.each(regions.loadBalancer, function(region, rcb){
             if (helpers.checkRegionSubscription(cache, source, results, region)) {
@@ -61,12 +61,12 @@ module.exports = {
                                 let ruleSet = lb.ruleSets[ruleSetName];
                                 if (ruleSet.items && ruleSet.items.length) {
                                     ruleSet.items.forEach(ruleSetItem => {
-                                        if (ruleSetItem.action && ruleSetItem.action === "REDIRECT" &&
+                                        if (ruleSetItem.action && ruleSetItem.action === 'REDIRECT' &&
                                             ruleSetItem.redirectUri &&
                                             ruleSetItem.redirectUri.port === 443) {
-                                            doesRedirect = true
+                                            doesRedirect = true;
                                         }
-                                    })
+                                    });
                                 }
                             });
                             if (doesRedirect) {

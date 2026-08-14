@@ -27,7 +27,7 @@ module.exports = {
             return callback(null, results, source);
         } else {
             var groupName = [];
-            async.each(instanceGroups.data, function (instanceGroup, icb) {
+            async.each(instanceGroups.data, function(instanceGroup, icb) {
                 if (instanceGroup.instanceGroups) {
                     instanceGroup.instanceGroups.forEach(group => {
                         if (group.region) {
@@ -36,11 +36,11 @@ module.exports = {
                     });
                 }
                 icb();
-            }, function () {
-                async.each(regions.instances.compute, function (location, loccb) {
+            }, function() {
+                async.each(regions.instances.compute, function(location, loccb) {
                     var instancesInRegion = [];
                     var regionExists = false;
-                    async.each(regions.zones[location], function (loc, lcb) {
+                    async.each(regions.zones[location], function(loc, lcb) {
                         let instances = helpers.addSource(
                             cache, source, ['instances', 'compute', 'list', loc]);
 

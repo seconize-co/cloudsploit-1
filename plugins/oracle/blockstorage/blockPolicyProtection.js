@@ -17,14 +17,14 @@ module.exports = {
         },
     },
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
         var config = {
             policy_group_admins: settings.policy_group_admins || this.settings.policy_group_admins.default
         };
 
-        var region = helpers.objectFirstKey(cache['regionSubscription']['list'])
+        var region = helpers.objectFirstKey(cache['regionSubscription']['list']);
         
         var policies = helpers.addSource(cache, source,
             ['policy', 'list', region]);

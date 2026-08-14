@@ -1,4 +1,3 @@
-var async = require('async');
 var helpers = require('../../../helpers/github');
 
 module.exports = {

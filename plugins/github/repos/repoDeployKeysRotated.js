@@ -1,4 +1,3 @@
-var async = require('async');
 var helpers = require('../../../helpers/github');
 
 module.exports = {
@@ -50,7 +49,7 @@ module.exports = {
             return callback(null, results, source);
         }
 
-        for (r in listRepos.data) {
+        for (var r in listRepos.data) {
             var repo = listRepos.data[r];
             var resource = helpers.getResource(repo);
 
@@ -68,7 +67,7 @@ module.exports = {
                 continue;
             }
 
-            for (k in listDeployKeys.data) {
+            for (var k in listDeployKeys.data) {
                 var key = listDeployKeys.data[k];
                 var keyName = key.title || 'unnamed';
                 var keyResourceName = helpers.getResource(key);

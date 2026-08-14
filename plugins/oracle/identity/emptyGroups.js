@@ -1,4 +1,3 @@
-var async = require('async');
 var helpers = require('../../../helpers/oracle');
 
 module.exports = {
@@ -10,7 +9,7 @@ module.exports = {
     recommended_action: 'Remove identity groups with no members.',
     apis: ['group:list', 'userGroupMembership:list'],
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
         var defaultRegion = '';
@@ -42,7 +41,7 @@ module.exports = {
             return callback(null, results, source);
         }
 
-        for (g in groups.data) {
+        for (var g in groups.data) {
             var group = groups.data[g];
 
             var users = userGroups.data.filter((u) => {
@@ -52,7 +51,7 @@ module.exports = {
             if (users && users.length) {
                 helpers.addResult(results, 0, `Group: ${group.name} contains ' + users.length + ' user(s)`, defaultRegion, group.id);
             } else {
-                helpers.addResult(results, 1, `Group: ${group.name} does not contain any users`, defaultRegion,group.id)
+                helpers.addResult(results, 1, `Group: ${group.name} does not contain any users`, defaultRegion,group.id);
             }
         }
 

@@ -12,13 +12,13 @@ module.exports = {
     link: 'https://docs.cloud.oracle.com/iaas/Content/Network/Concepts/securitylists.htm',
     apis: ['vcn:list', 'securityList:list', 'networkSecurityGroup:list', 'securityRule:list'],
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
         var regions = helpers.regions(settings.govcloud);
         var isSecurityRule = false;
 
-        async.each(regions.securityList, function (region, rcb) {
+        async.each(regions.securityList, function(region, rcb) {
 
             if (helpers.checkRegionSubscription(cache, source, results, region)) {
                 var ruleEmpty = false;
@@ -85,7 +85,7 @@ module.exports = {
             }
 
             rcb();
-        }, function () {
+        }, function() {
             // Global checking goes here
             callback(null, results, source);
         });

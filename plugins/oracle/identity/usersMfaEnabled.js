@@ -17,36 +17,36 @@ module.exports = {
             'Create an MFA key for user accounts.'
     },
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
 
         var region = helpers.objectFirstKey(cache['regionSubscription']['list']);
 
-            var users = helpers.addSource(cache, source,
-                ['user', 'list', region]);
+        var users = helpers.addSource(cache, source,
+            ['user', 'list', region]);
 
-            if (!users) return callback(null, results, source);
+        if (!users) return callback(null, results, source);
 
-            if (users.err || !users.data) {
-                helpers.addResult(results, 3,
-                    'Unable to query for user MFA status: ' + helpers.addError(users));
-                return callback(null, results, source);
+        if (users.err || !users.data) {
+            helpers.addResult(results, 3,
+                'Unable to query for user MFA status: ' + helpers.addError(users));
+            return callback(null, results, source);
+        }
+
+        if (users.data.length < 2) {
+            helpers.addResult(results, 0, 'No user accounts found');
+            return callback(null, results, source);
+        }
+
+        users.data.forEach(user => {
+            if (user.isMfaActivated) {
+                helpers.addResult(results, 0, 'The user has MFA enabled', 'global', user.id);
+            } else {
+                helpers.addResult(results, 2, 'The user has MFA disabled', 'global', user.id);
             }
+        });
 
-            if (users.data.length < 2) {
-                helpers.addResult(results, 0, 'No user accounts found');
-                return callback(null, results, source);
-            }
-
-            users.data.forEach(user => {
-                if (user.isMfaActivated) {
-                    helpers.addResult(results, 0, 'The user has MFA enabled', 'global', user.id);
-                } else {
-                    helpers.addResult(results, 2, 'The user has MFA disabled', 'global', user.id);
-                }
-            });
-
-            callback(null, results, source);
+        callback(null, results, source);
     }
 };

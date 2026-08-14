@@ -38,14 +38,14 @@ module.exports = {
                 instancePools.data.forEach(instancePool => {
                     if (instancePool.availabilityDomains &&
                         instancePool.availabilityDomains.length === 1) {
-                            var availabilityDomains = Object.values(instancePool.availabilityDomains).join(', ');
-                            helpers.addResult(results, 2, 
-                                `Instance pool is only in one availability domain: ${availabilityDomains}`, region, instancePool.id);
+                        var availabilityDomains = Object.values(instancePool.availabilityDomains).join(', ');
+                        helpers.addResult(results, 2, 
+                            `Instance pool is only in one availability domain: ${availabilityDomains}`, region, instancePool.id);
                     } else if (instancePool.availabilityDomains &&
                         instancePool.availabilityDomains.length > 1) {
-                            var availabilityDomains = Object.values(instancePool.availabilityDomains).join(', ');
-                            helpers.addResult(results, 0, 
-                                `Instance pool is in multiple availability domains: ${availabilityDomains}`, region, instancePool.id);
+                        availabilityDomains = Object.values(instancePool.availabilityDomains).join(', ');
+                        helpers.addResult(results, 0, 
+                            `Instance pool is in multiple availability domains: ${availabilityDomains}`, region, instancePool.id);
                     } else {
                         helpers.addResult(results, 2,
                             'No availability domains', region, instancePool.id);

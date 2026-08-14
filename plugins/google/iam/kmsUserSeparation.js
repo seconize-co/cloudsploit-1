@@ -36,7 +36,7 @@ module.exports = {
             var notSeparated = [];
             iamPolicy.bindings.forEach(roleBinding => {
                 if (roleBinding.role === 'roles/cloudkms.admin') {
-                    serviceAccountUsers = serviceAccountUsers.concat(roleBinding.members)
+                    serviceAccountUsers = serviceAccountUsers.concat(roleBinding.members);
                 }
             });
 
@@ -44,17 +44,17 @@ module.exports = {
                 if (roleBinding.role === 'roles/cloudkms.cryptoKeyDecrypter' &&
                     roleBinding.members) {
                     notSeparated = roleBinding.members.filter(member => {
-                        return (serviceAccountUsers.indexOf(member) > -1)
+                        return (serviceAccountUsers.indexOf(member) > -1);
                     }).concat(notSeparated);
                 } else if (roleBinding.role === 'roles/cloudkms.cryptoKeyEncrypter' &&
                     roleBinding.members) {
                     notSeparated = roleBinding.members.filter(member => {
-                        return (serviceAccountUsers.indexOf(member) > -1)
+                        return (serviceAccountUsers.indexOf(member) > -1);
                     }).concat(notSeparated);
                 } else if (roleBinding.role === 'roles/cloudkms.cryptoKeyEncrypterDecrypter' &&
                     roleBinding.members) {
                     notSeparated = roleBinding.members.filter(member => {
-                        return (serviceAccountUsers.indexOf(member) > -1)
+                        return (serviceAccountUsers.indexOf(member) > -1);
                     }).concat(notSeparated);
                 }
             });

@@ -38,23 +38,24 @@ module.exports = {
                     return;
                 }
 
-                if (sqlInstance.instanceType != "READ_REPLICA_INSTANCE" &&
+                if (sqlInstance.instanceType != 'READ_REPLICA_INSTANCE' &&
                     sqlInstance.settings &&
                     sqlInstance.settings.databaseFlags &&
                     sqlInstance.settings.databaseFlags.length) {
-                        let found = sqlInstance.settings.databaseFlags.find(flag => flag.name && flag.name == 'local_infile' &&
+                    let found = sqlInstance.settings.databaseFlags.find(flag => flag.name && flag.name == 'local_infile' &&
                                                                         flag.value && flag.value == 'off');
                         
-                        if (found) {
-                            helpers.addResult(results, 0, 
-                                'SQL instance does not have local_infile flag enabled', region, sqlInstance.name);
-                        } else {
-                            helpers.addResult(results, 2,
-                                'SQL instance have local_infile flag enabled', region, sqlInstance.name);
-                        }
-                } else if (sqlInstance.instanceType == "READ_REPLICA_INSTANCE"){
+                    if (found) {
+                        helpers.addResult(results, 0, 
+                            'SQL instance does not have local_infile flag enabled', region, sqlInstance.name);
+                    } else {
+                        helpers.addResult(results, 2,
+                            'SQL instance have local_infile flag enabled', region, sqlInstance.name);
+                    }
+                // Intentional no-op: read replicas inherit config from the primary instance, deliberately not evaluated independently
+                } else if (sqlInstance.instanceType == 'READ_REPLICA_INSTANCE'){ // eslint-disable-line no-empty
                 } else {
-                    helpers.addResult(results, 2, 
+                    helpers.addResult(results, 2,
                         'SQL instance have local_infile flag enabled', region, sqlInstance.name);
                 }
             });
@@ -65,4 +66,4 @@ module.exports = {
             callback(null, results, source);
         });
     }
-}
+};

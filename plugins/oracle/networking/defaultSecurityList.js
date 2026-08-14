@@ -16,12 +16,12 @@ module.exports = {
             'unintended traffic to cross these isolation boundaries.'
     },
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
         var regions = helpers.regions(settings.govcloud);
 
-        async.each(regions.vcn, function (region, rcb) {
+        async.each(regions.vcn, function(region, rcb) {
 
             if (helpers.checkRegionSubscription(cache, source, results, region)) {
                 var securityLists = helpers.addSource(cache, source,
@@ -43,7 +43,7 @@ module.exports = {
                 var noDefault = true;
                 securityLists.data.forEach(securityList => {
                     if (securityList.displayName) {
-                        var displayNameArr = securityList.displayName.split(" ");
+                        var displayNameArr = securityList.displayName.split(' ');
                         if (displayNameArr[0].toLowerCase() === 'default') {
                             noDefault = false;
                             if ((securityList.egressSecurityRules &&
@@ -67,7 +67,7 @@ module.exports = {
             }
 
             rcb();
-        }, function () {
+        }, function() {
             // Global checking goes here
             callback(null, results, source);
         });

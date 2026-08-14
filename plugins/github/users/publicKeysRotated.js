@@ -1,4 +1,3 @@
-var async = require('async');
 var helpers = require('../../../helpers/github');
 
 module.exports = {
@@ -37,7 +36,7 @@ module.exports = {
         var source = {};
 
         var listPublicKeys = helpers.addSource(cache, source,
-                ['users', 'listPublicKeys']);
+            ['users', 'listPublicKeys']);
 
         if (!listPublicKeys) return callback(null, results, source);
 
@@ -52,7 +51,7 @@ module.exports = {
             return callback(null, results, source);
         }
 
-        for (p in listPublicKeys.data) {
+        for (var p in listPublicKeys.data) {
             var key = listPublicKeys.data[p];
             var keyName = key.title || 'unnamed';
             var keyResourceName = key.url || 'unknown';

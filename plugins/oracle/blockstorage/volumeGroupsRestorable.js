@@ -48,7 +48,7 @@ module.exports = {
                 volumeGroupBackups.data.forEach(volumeGroupBackup => {
                     if (volumeGroupBackup.lifecycleState &&
                         volumeGroupBackup.lifecycleState.toUpperCase() === 'AVAILABLE') {
-                        enabledVolumeGroups.push(volumeGroupBackup.volumeGroupId)
+                        enabledVolumeGroups.push(volumeGroupBackup.volumeGroupId);
                     }
                 });
 

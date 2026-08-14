@@ -31,7 +31,7 @@ module.exports = {
 
                 if (!instancePools.data.length) {
                     helpers.addResult(results, 0, 'No instance pool found', region);
-                    return rcb()
+                    return rcb();
                 }
 
                 var autoscaleConfigurations = helpers.addSource(cache, source,

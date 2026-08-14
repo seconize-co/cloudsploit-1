@@ -17,12 +17,12 @@ module.exports = {
             'by administrators.'
     },
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
         var regions = helpers.regions(settings.govcloud);
 
-        async.each(regions.bucket, function (region, rcb) {
+        async.each(regions.bucket, function(region, rcb) {
 
             if (helpers.checkRegionSubscription(cache, source, results, region)) {
 
@@ -38,9 +38,9 @@ module.exports = {
                     helpers.addResult(results, 0, 'No object store bucket details to check', region);
                 } else {
 
-                    getBucket.data.forEach(function (bucket) {
+                    getBucket.data.forEach(function(bucket) {
                         if (bucket.publicAccessType &&
-                            bucket.publicAccessType === "NoPublicAccess") {
+                            bucket.publicAccessType === 'NoPublicAccess') {
                             helpers.addResult(results, 0,
                                 `Object store bucket (${bucket.name}) does not allow public access.`, region, bucket.id);
                         } else {

@@ -46,7 +46,7 @@ module.exports = {
 
                 var enabledBlockVolumes = [];
                 blockVolumeBackupPolicies.data.forEach(blockVolumeBackupPolicy => {
-                    enabledBlockVolumes.push(blockVolumeBackupPolicy.assetId)
+                    enabledBlockVolumes.push(blockVolumeBackupPolicy.assetId);
                 });
 
                 blockVolumes.data.forEach(blockVolume => {

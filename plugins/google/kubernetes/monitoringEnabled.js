@@ -30,11 +30,9 @@ module.exports = {
                 helpers.addResult(results, 0, 'No Kubernetes clusters found', region);
                 return rcb();
             }
-            var badClusters = false;
             clusters.data.forEach(cluster => {
                 if (cluster.monitoringService &&
                     cluster.monitoringService == 'none') {
-                    badClusters = true;
                     helpers.addResult(results, 2, 'Monitoring is disabled on the Kubernetes cluster', region, cluster.name);
                 } else {
                     helpers.addResult(results, 0, 'Monitoring is enabled on the Kubernetes cluster', region, cluster.name);
@@ -47,4 +45,4 @@ module.exports = {
             callback(null, results, source);
         });
     }
-}
+};

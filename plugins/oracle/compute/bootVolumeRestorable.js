@@ -51,7 +51,7 @@ module.exports = {
 
                 var enabledBootVolumes = [];
                 bootVolumeBackups.data.forEach(bootVolumeBackup => {
-                    enabledBootVolumes.push(bootVolumeBackup.bootVolumeId)
+                    enabledBootVolumes.push(bootVolumeBackup.bootVolumeId);
                 });
 
                 bootVolumes.data.forEach(bootVolume => {

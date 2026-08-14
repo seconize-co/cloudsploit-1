@@ -108,8 +108,8 @@ module.exports = {
 
         };
 
-        for (c in config) {
-            if (settings.hasOwnProperty(c)) {
+        for (var c in config) {
+            if (Object.prototype.hasOwnProperty.call(settings, c)) {
                 config[c] = settings[c];
             }
         }
@@ -175,10 +175,10 @@ module.exports = {
 
             if (instanceCountGlobal > globalThreshold) {
                 helpers.addResult(results, 2,
-                instanceCountGlobal + ' VM instances running in all regions, exceeding limit of: ' + globalThreshold, null, null, custom);
+                    instanceCountGlobal + ' VM instances running in all regions, exceeding limit of: ' + globalThreshold, null, null, custom);
             } else {
                 helpers.addResult(results, 0,
-                instanceCountGlobal + ' instances in the account are within the global expected count of: ' + globalThreshold, null, null, custom);
+                    instanceCountGlobal + ' instances in the account are within the global expected count of: ' + globalThreshold, null, null, custom);
             }
 
             callback(null, results, source);

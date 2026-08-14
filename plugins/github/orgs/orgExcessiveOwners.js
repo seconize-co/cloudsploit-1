@@ -1,4 +1,3 @@
-var async = require('async');
 var helpers = require('../../../helpers/github');
 
 module.exports = {
@@ -28,7 +27,7 @@ module.exports = {
 
         var count = {admin: 0, users: 0};
 
-        for (m in listMembers.data) {
+        for (var m in listMembers.data) {
             var member = listMembers.data[m];
 
             var getMembership = helpers.addSource(cache, source,

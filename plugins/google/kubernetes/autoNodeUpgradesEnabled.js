@@ -43,7 +43,7 @@ module.exports = {
                             helpers.addResult(results, 2,
                                 `Auto upgrades are disabled for the node pool of the cluster: ${cluster.name}`, region, nodePool.name);
                         }
-                    })
+                    });
                 } else {
                     helpers.addResult(results, 0, 'No node pools found', region, cluster.name);
                 }
@@ -55,4 +55,4 @@ module.exports = {
             callback(null, results, source);
         });
     }
-}
+};

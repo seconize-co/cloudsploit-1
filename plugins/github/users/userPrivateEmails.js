@@ -1,4 +1,3 @@
-var async = require('async');
 var helpers = require('../../../helpers/github');
 
 module.exports = {
@@ -33,7 +32,7 @@ module.exports = {
 
         var found = false;
 
-        for (e in listEmails.data) {
+        for (var e in listEmails.data) {
             var email = listEmails.data[e];
             if (!email.primary) continue;
             found = true;

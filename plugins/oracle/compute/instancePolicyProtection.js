@@ -17,7 +17,7 @@ module.exports = {
         },
     },
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
 
@@ -26,7 +26,7 @@ module.exports = {
 
         };
 
-        var region = helpers.objectFirstKey(cache['regionSubscription']['list'])
+        var region = helpers.objectFirstKey(cache['regionSubscription']['list']);
 
         var policies = helpers.addSource(cache, source,
             ['policy', 'list', region]);

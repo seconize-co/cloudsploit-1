@@ -45,9 +45,9 @@ module.exports = {
 
                 instances.data.forEach(instance => {
                     if (instance.canIpForward) {
-                        badInstances.push(instance.id)
+                        badInstances.push(instance.id);
                     }
-                })
+                });
             });
             if (myError[region] &&
                 zones[region] &&
@@ -58,7 +58,7 @@ module.exports = {
                 (noInstances[region].join(',') === zones[region].join(','))) {
                 helpers.addResult(results, 0, 'No instances found in the region' , region);
             } else if (badInstances.length) {
-                var myInstanceStr = badInstances.join(", ");
+                var myInstanceStr = badInstances.join(', ');
                 helpers.addResult(results, 2,
                     `Instance IP forwarding is enabled for the following instances: ${myInstanceStr}`, region);
             } else if (!badInstances.length) {
@@ -70,4 +70,4 @@ module.exports = {
             callback(null, results, source);
         });
     }
-}
+};

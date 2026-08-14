@@ -37,14 +37,14 @@ module.exports = {
                     cluster.nodePools.forEach(nodePool => {
                         if (nodePool.config &&
                             nodePool.config.serviceAccount &&
-                            nodePool.config.serviceAccount === "default") {
+                            nodePool.config.serviceAccount === 'default') {
                             helpers.addResult(results, 2,
                                 `The default service account is being used for the node pool of the cluster: ${cluster.name}`, region, nodePool.name);
                         } else {
                             helpers.addResult(results, 0,
                                 `The default service account is not being used for the node pool of the cluster: ${cluster.name}`, region, nodePool.name);
                         }
-                    })
+                    });
                 } else {
                     helpers.addResult(results, 0, 'No node pools found', region, cluster.name);
                 }

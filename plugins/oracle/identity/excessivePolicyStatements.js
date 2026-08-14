@@ -36,7 +36,7 @@ module.exports = {
 
         var custom = helpers.isCustom(settings, this.settings);
         
-        var region = helpers.objectFirstKey(cache['regionSubscription']['list'])
+        var region = helpers.objectFirstKey(cache['regionSubscription']['list']);
         
 
         if (helpers.checkRegionSubscription(cache, source, results, region)) {

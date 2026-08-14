@@ -16,7 +16,7 @@ module.exports = {
     run: function(cache, settings, callback) {
         var results = [];
         var source = {};
-		var regions = helpers.regions(settings.govcloud);
+        var regions = helpers.regions(settings.govcloud);
 
         async.each(regions.loadBalancer, function(region, rcb){
             if (helpers.checkRegionSubscription(cache, source, results, region)) {
@@ -37,7 +37,7 @@ module.exports = {
                     return rcb();
                 }
 
-                async.each(loadBalancers.data, function (lb, cb) {
+                async.each(loadBalancers.data, function(lb, cb) {
                     if (lb.backendSets) {
                         var lbBackend = lb.backendSets['bs_' + lb.displayName];
                         if (lbBackend &&

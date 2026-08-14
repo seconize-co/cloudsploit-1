@@ -40,16 +40,16 @@ module.exports = {
 
                 subnets.data.forEach(subnet  => {
                     if (subnet.availabilityDomain) {
-                        if(!badSubnetObj[subnet.vcnId]) {
+                        if (!badSubnetObj[subnet.vcnId]) {
                             badSubnetObj[subnet.vcnId] = 1;
                         } else {
-                            badSubnetObj[subnet.vcnId]++
+                            badSubnetObj[subnet.vcnId]++;
                         }
                     } else {
-                        if(!goodSubnetObj[subnet.vcnId]) {
+                        if (!goodSubnetObj[subnet.vcnId]) {
                             goodSubnetObj[subnet.vcnId] = 1;
                         } else {
-                            goodSubnetObj[subnet.vcnId]++
+                            goodSubnetObj[subnet.vcnId]++;
                         }
                     }
                 });

@@ -52,7 +52,7 @@ module.exports = {
                 var enabledBootVolumes = [];
 
                 bootVolumeBackupPolicies.data.forEach(bootVolumeBackupPolicy => {
-                    enabledBootVolumes.push(bootVolumeBackupPolicy.bootVolumeId)
+                    enabledBootVolumes.push(bootVolumeBackupPolicy.bootVolumeId);
                 });
 
                 bootVolumes.data.forEach(bootVolume => {

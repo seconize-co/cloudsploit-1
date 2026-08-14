@@ -50,7 +50,7 @@ module.exports = {
 
                         instance.metadata.items.forEach(metaItem => {
                             if (metaItem.key === 'block-project-ssh-keys' && metaItem.value === 'FALSE') {
-                                notBlockedProjectSSHKey.push(instance.id)
+                                notBlockedProjectSSHKey.push(instance.id);
                             }
                         });
                     }
@@ -66,7 +66,7 @@ module.exports = {
                 (noInstances[region].join(',') === zones[region].join(','))) {
                 helpers.addResult(results, 0, 'No instances found in the region' , region);
             } else if (notBlockedProjectSSHKey.length) {
-                var myInstanceStr = notBlockedProjectSSHKey.join(", ");
+                var myInstanceStr = notBlockedProjectSSHKey.join(', ');
                 helpers.addResult(results, 2,
                     `Block project-wide SSH keys is disabled for the following instances: ${myInstanceStr}`, region);
             } else if (!notBlockedProjectSSHKey.length) {

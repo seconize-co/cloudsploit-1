@@ -29,7 +29,7 @@ module.exports = {
         };
 
         var results = [];
-        var source = {}
+        var source = {};
         var region = helpers.objectFirstKey(cache['regionSubscription']['list']);
 
         if (helpers.checkRegionSubscription(cache, source, results, region)) {

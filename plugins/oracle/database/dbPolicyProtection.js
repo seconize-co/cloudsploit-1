@@ -17,7 +17,7 @@ module.exports = {
         },
     },
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
 
@@ -25,7 +25,7 @@ module.exports = {
             policy_group_admins: settings.policy_group_admins || this.settings.policy_group_admins.default
         };
         
-        var region = helpers.objectFirstKey(cache['regionSubscription']['list'])
+        var region = helpers.objectFirstKey(cache['regionSubscription']['list']);
 
         var policies = helpers.addSource(cache, source,
             ['policy', 'list', region]);
@@ -44,7 +44,7 @@ module.exports = {
         }
         var policyProtection = true;
         var entered = false;
-        var resourceTypes = ['databases', 'db-homes']
+        var resourceTypes = ['databases', 'db-homes'];
 
         policies.data.forEach(policy => {
             if (policy.statements &&

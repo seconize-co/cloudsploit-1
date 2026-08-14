@@ -55,7 +55,7 @@ module.exports = {
                         instance.serviceAccounts.forEach(serviceAccount => {
                             if (serviceAccount.scopes &&
                                 serviceAccount.scopes.indexOf('https://www.googleapis.com/auth/cloud-platform') > -1) {
-                                myFullAccessScopes[region].push(serviceAccount.email)
+                                myFullAccessScopes[region].push(serviceAccount.email);
                             }
                         });
                     }

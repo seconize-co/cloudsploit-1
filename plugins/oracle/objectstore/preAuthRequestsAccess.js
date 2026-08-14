@@ -43,7 +43,7 @@ module.exports = {
                 requests.data.forEach(request => {
                     var ONE_DAY = 24*60*60*1000;
                     if (request.timeExpires) {
-                        var timeExpires = request.timeExpires.split("T")[0];
+                        var timeExpires = request.timeExpires.split('T')[0];
 
                         timeExpires = Math.ceil((new Date(timeExpires).getTime() - new Date(new Date()).getTime())/(ONE_DAY));
                         if (timeExpires < 0) return;

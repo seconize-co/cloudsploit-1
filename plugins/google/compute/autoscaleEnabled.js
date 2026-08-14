@@ -35,7 +35,7 @@ module.exports = {
         async.each(instanceGroups, function(instanceGroupsInLocation, rcb) {
             instanceGroupsInLocation.instanceGroups.forEach(instanceGroup => {
                 if (instanceGroup.name) {
-                    instanceGroupURLObj[instanceGroup.name] = instanceGroup
+                    instanceGroupURLObj[instanceGroup.name] = instanceGroup;
                 }
             });
 
@@ -59,8 +59,8 @@ module.exports = {
                                 nodePool.instanceGroupUrls.length) {
                                 nodePool.instanceGroupUrls.forEach(instanceGroupUrl => {
                                     var instanceGroupUrlName = instanceGroupUrl.split('/')[10];
-                                    if (instanceGroupURLObj.hasOwnProperty(instanceGroupUrlName)) {
-                                        delete instanceGroupURLObj[instanceGroupUrlName]
+                                    if (Object.prototype.hasOwnProperty.call(instanceGroupURLObj, instanceGroupUrlName)) {
+                                        delete instanceGroupURLObj[instanceGroupUrlName];
                                     }
                                 });
                             }
@@ -84,8 +84,8 @@ module.exports = {
                 async.each(autoscalers, function(autoscalersInLocation, lcb) {
                     autoscalersInLocation.autoscalers.forEach(autoscaler => {
                         if (autoscaler.name) {
-                            if (instanceGroupURLObj.hasOwnProperty(autoscaler.name)) {
-                                delete instanceGroupURLObj[autoscaler.name]
+                            if (Object.prototype.hasOwnProperty.call(instanceGroupURLObj, autoscaler.name)) {
+                                delete instanceGroupURLObj[autoscaler.name];
                             }
                         }
                     });

@@ -48,7 +48,7 @@ module.exports = {
                 blockVolumeBackups.data.forEach(blockVolumeBackup => {
                     if (blockVolumeBackup.lifecycleState &&
                         blockVolumeBackup.lifecycleState.toUpperCase() === 'AVAILABLE') {
-                        enabledBlockVolumes.push(blockVolumeBackup.volumeId)
+                        enabledBlockVolumes.push(blockVolumeBackup.volumeId);
                     }
                 });
 

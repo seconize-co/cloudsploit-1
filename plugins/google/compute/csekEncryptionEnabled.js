@@ -56,9 +56,9 @@ module.exports = {
                         disk.diskEncryptionKey &&
                         Object.keys(disk.diskEncryptionKey) &&
                         Object.keys(disk.diskEncryptionKey).length) {
-                        goodDisks.push(disk.id)
+                        goodDisks.push(disk.id);
                     } else if (disk.creationTimestamp) {
-                        badDisks.push(disk.id)
+                        badDisks.push(disk.id);
                     }
                 });
             });
@@ -69,7 +69,7 @@ module.exports = {
             } else if (!goodDisks.length && !badDisks.length) {
                 helpers.addResult(results, 0, 'No disks found in the region' , region);
             } else if (badDisks.length) {
-                var myInstanceStr = badDisks.join(", ");
+                var myInstanceStr = badDisks.join(', ');
                 helpers.addResult(results, 2,
                     `CSEK Encryption is disabled for the following disks: ${myInstanceStr}`, region);
             } else if (goodDisks.length) {

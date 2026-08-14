@@ -10,13 +10,13 @@ module.exports = {
     link: 'https://help.saltstack.com/hc/en-us/articles/360043056331-New-SaltStack-Release-Critical-Vulnerability',
     apis: ['vcn:list', 'securityList:list', 'networkSecurityGroup:list', 'securityRule:list'],
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
         var regions = helpers.regions(settings.govcloud);
         var isSecurityRule = false;
 
-        async.each(regions.securityList, function (region, rcb) {
+        async.each(regions.securityList, function(region, rcb) {
 
             if (helpers.checkRegionSubscription(cache, source, results, region)) {
                 var ruleEmpty = false;
@@ -83,7 +83,7 @@ module.exports = {
             }
 
             rcb();
-        }, function () {
+        }, function() {
             // Global checking goes here
             callback(null, results, source);
         });

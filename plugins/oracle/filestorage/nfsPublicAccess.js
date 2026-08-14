@@ -47,7 +47,7 @@ module.exports = {
                 fileSystems.data.forEach(fileSystem => {
                     if (fileSystem.exportOptions) {
                         fileSystem.exportOptions.forEach(exportOption => {
-                            if ((exportOption.source !== "0.0.0.0/0") && (exportOption.source !== '::/0')) {
+                            if ((exportOption.source !== '0.0.0.0/0') && (exportOption.source !== '::/0')) {
                                 helpers.addResult(results, 0, 'NFS does not allow public access', region, fileSystem.fileSystemId);
                             } else {
                                 publicFileSystem[fileSystem.exportSetId] = [];
@@ -62,18 +62,18 @@ module.exports = {
                     var mountTargets = helpers.addSource(cache, source,
                         ['mountTarget', 'list', region]);
 
-                     if (!mountTargets || mountTargets.err || !mountTargets.data) {
-                         helpers.addResult(results, 3,
-                             'Unable to query for mount targets: ' + helpers.addError(mountTargets), region);
-                         return rcb();
-                     }
+                    if (!mountTargets || mountTargets.err || !mountTargets.data) {
+                        helpers.addResult(results, 3,
+                            'Unable to query for mount targets: ' + helpers.addError(mountTargets), region);
+                        return rcb();
+                    }
                     if (!mountTargets.data.length) {
                         var publicFileSystemStr = Object.values(publicFileSystem).join(', ');
                         helpers.addResult(results, 2, `The following NFS allow public access: ${publicFileSystemStr}`, region);
                         return rcb();
                     }
-                     mountTargets.data.forEach(mountTarget => {
-                         if (publicExportSets > 1) {
+                    mountTargets.data.forEach(mountTarget => {
+                        if (publicExportSets > 1) {
                             if (publicExportSets.indexOf(mountTarget.exportSetId) > -1) {
                                 mountSubnets[mountTarget.subnetId] = publicFileSystem[mountTarget.exportSetId];
                             }
@@ -81,7 +81,7 @@ module.exports = {
                             if (publicExportSets[0] === mountTarget.exportSetId) {
                                 mountSubnets[mountTarget.subnetId] = publicFileSystem[mountTarget.exportSetId];
                             }
-                         }
+                        }
                     });
 
                     var subnetsToCheck = Object.keys(mountSubnets);
@@ -91,7 +91,7 @@ module.exports = {
 
                         if (subnets.err  || !subnets.data || !subnets.data.length) {
                             helpers.addResult(results, 3,
-                                'Unable to query for Subnets: ' + helpers.addError(subnets))
+                                'Unable to query for Subnets: ' + helpers.addError(subnets));
                         } else {
                             subnets.data.forEach(subnet => {
                                 if (subnetsToCheck.indexOf(subnet.id) > -1) {
@@ -104,7 +104,7 @@ module.exports = {
                             });
                         }
                     } else {
-                        var publicFileSystemStr = Object.values(publicFileSystem).join(', ');
+                        publicFileSystemStr = Object.values(publicFileSystem).join(', ');
                         helpers.addResult(results, 2, `The following NFS allow public access: ${publicFileSystemStr}`, region);
                     }
 

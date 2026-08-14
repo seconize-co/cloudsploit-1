@@ -24,7 +24,7 @@ module.exports = {
         }
     },
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var config = {
             excessive_security_lists_fail: settings.excessive_security_lists_fail ||
                 this.settings.excessive_security_lists_fail.default,
@@ -36,7 +36,7 @@ module.exports = {
         var source = {};
         var regions = helpers.regions(settings.govcloud);
 
-        async.each(regions.securityList, function (region, rcb) {
+        async.each(regions.securityList, function(region, rcb) {
 
             if (helpers.checkRegionSubscription(cache, source, results, region)) {
                 var securityLists = helpers.addSource(cache, source,
@@ -69,7 +69,7 @@ module.exports = {
 
             }
             rcb();
-        }, function () {
+        }, function() {
             // Global checking goes here
             callback(null, results, source);
         });

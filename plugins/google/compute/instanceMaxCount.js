@@ -193,8 +193,8 @@ module.exports = {
 
 
         };
-        for (c in config) {
-            if (settings.hasOwnProperty(c)) {
+        for (var c in config) {
+            if (Object.prototype.hasOwnProperty.call(settings, c)) {
                 config[c] = settings[c];
             }
         }
@@ -234,11 +234,11 @@ module.exports = {
                     return zcb();
                 }
                 instances.data.forEach(instance => {
-                    if (instance.status && instance.status == "RUNNING") {
+                    if (instance.status && instance.status == 'RUNNING') {
                         instanceCountGlobal +=1;
                         instanceCount +=1;
                     }
-                })
+                });
             });
             // Print region results
             var regionUnderscore = region.replace(/-/g, '_');

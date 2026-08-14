@@ -38,21 +38,22 @@ module.exports = {
                     return;
                 }
 
-                if (sqlInstance.instanceType != "READ_REPLICA_INSTANCE" &&
+                if (sqlInstance.instanceType != 'READ_REPLICA_INSTANCE' &&
                     sqlInstance.settings &&
                     sqlInstance.settings.databaseFlags &&
                     sqlInstance.settings.databaseFlags.length) {
-                        let found = sqlInstance.settings.databaseFlags.find(flag => flag.name && flag.name == 'log_connections' &&
+                    let found = sqlInstance.settings.databaseFlags.find(flag => flag.name && flag.name == 'log_connections' &&
                                                                         flag.value && flag.value == 'on');
 
-                        if (found) {
-                            helpers.addResult(results, 0, 
-                                'SQL instance have log_connections flag enabled', region, sqlInstance.name);
-                        } else {
-                            helpers.addResult(results, 2,
-                                'SQL instance does not have log_connections flag enabled', region, sqlInstance.name);
-                        }
-                } else if (sqlInstance.instanceType == "READ_REPLICA_INSTANCE"){
+                    if (found) {
+                        helpers.addResult(results, 0, 
+                            'SQL instance have log_connections flag enabled', region, sqlInstance.name);
+                    } else {
+                        helpers.addResult(results, 2,
+                            'SQL instance does not have log_connections flag enabled', region, sqlInstance.name);
+                    }
+                // Intentional no-op: read replicas inherit config from the primary instance, deliberately not evaluated independently
+                } else if (sqlInstance.instanceType == 'READ_REPLICA_INSTANCE'){ // eslint-disable-line no-empty
                 } else {
                     helpers.addResult(results, 2, 
                         'SQL instance does not have log_connections flag enabled', region, sqlInstance.name);
@@ -65,4 +66,4 @@ module.exports = {
             callback(null, results, source);
         });
     }
-}
+};

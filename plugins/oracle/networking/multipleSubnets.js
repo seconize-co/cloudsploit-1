@@ -66,7 +66,7 @@ module.exports = {
                         helpers.addResult(results, 1,
                             'The VCN does not have any subnets', region, vcnId);
                     }
-                })
+                });
             }
             rcb();
         }, function(){

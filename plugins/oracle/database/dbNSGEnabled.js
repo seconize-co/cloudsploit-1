@@ -45,7 +45,7 @@ module.exports = {
                     return rcb();
                 }
                 databases.data.forEach(database => {
-                    if (database.lifecycleState === "AVAILABLE") {
+                    if (database.lifecycleState === 'AVAILABLE') {
                         if (database.nsgIds &&
                             database.nsgIds.length) {
                             helpers.addResult(results, 0, 'The database system has network security groups enabled', region, database.id);

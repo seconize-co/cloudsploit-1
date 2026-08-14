@@ -43,7 +43,7 @@ module.exports = {
                         bucketName = sink.destination.split('/')[1];
                     }
                     noSinks = false;
-                    sinkName = sink.name
+                    sinkName = sink.name;
                 }
             });
             if (bucketName.length) {

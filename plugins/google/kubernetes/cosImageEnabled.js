@@ -37,14 +37,14 @@ module.exports = {
                     cluster.nodePools.forEach(nodePool => {
                         if (nodePool.config &&
                             nodePool.config.imageType &&
-                            nodePool.config.imageType === "COS") {
+                            nodePool.config.imageType === 'COS') {
                             helpers.addResult(results, 0,
                                 `Container-Optimized OS is enabled for the node pool of the cluster: ${cluster.name}`, region, nodePool.name);
                         } else {
                             helpers.addResult(results, 2,
                                 `Container-Optimized OS disabled for the node pool of the cluster: ${cluster.name}`, region, nodePool.name);
                         }
-                    })
+                    });
                 } else {
                     helpers.addResult(results, 0, 'No node pools found', region, cluster.name);
                 }
@@ -56,4 +56,4 @@ module.exports = {
             callback(null, results, source);
         });
     }
-}
+};

@@ -32,17 +32,18 @@ module.exports = {
             }
 
             sqlInstances.data.forEach(sqlInstance => {
-                if (sqlInstance.instanceType != "READ_REPLICA_INSTANCE" &&
+                if (sqlInstance.instanceType != 'READ_REPLICA_INSTANCE' &&
                     sqlInstance.failoverReplica &&
                     sqlInstance.failoverReplica.available) {
                     helpers.addResult(results, 0, 
                         'SQL instance has multi-AZ enabled', region, sqlInstance.name);
-                } else if (sqlInstance.instanceType == "READ_REPLICA_INSTANCE"){
+                // Intentional no-op: read replicas inherit config from the primary instance, deliberately not evaluated independently
+                } else if (sqlInstance.instanceType == 'READ_REPLICA_INSTANCE'){ // eslint-disable-line no-empty
                 } else {
                     helpers.addResult(results, 2, 
                         'SQL instance does not have multi-AZ enabled', region, sqlInstance.name);
                 }
-            })
+            });
 
             rcb();
         }, function(){
@@ -50,4 +51,4 @@ module.exports = {
             callback(null, results, source);
         });
     }
-}
+};

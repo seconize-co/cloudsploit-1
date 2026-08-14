@@ -1,4 +1,3 @@
-var async = require('async');
 var helpers = require('../../../helpers/github');
 
 module.exports = {
@@ -46,11 +45,11 @@ module.exports = {
         // Create list of organization members
         var orgMembers = [];
 
-        for (m in listMembers.data) {
+        for (var m in listMembers.data) {
             orgMembers.push(listMembers.data[m].login);
         }
 
-        for (r in listRepos.data) {
+        for (var r in listRepos.data) {
             var repo = listRepos.data[r];
             var resource = helpers.getResource(repo);
 
@@ -70,12 +69,12 @@ module.exports = {
 
             var outside = {admin:[], push: [], pull: []};
 
-            for (c in listCollaborators.data) {
+            for (var c in listCollaborators.data) {
                 var collaborator = listCollaborators.data[c];
 
                 // If the collaborator is not part of the organization
                 if (orgMembers.indexOf(collaborator.login) == -1) {
-                    for (p in collaborator.permissions) {
+                    for (var p in collaborator.permissions) {
                         if (collaborator.permissions[p] && outside[p]) outside[p].push(collaborator);
                     }
                 }

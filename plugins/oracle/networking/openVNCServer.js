@@ -40,7 +40,7 @@ module.exports = {
 
                 } else if (getSecurityLists &&
                     (!getSecurityLists.data || !getSecurityLists.data.length)) {
-                   listEmpty = true;
+                    listEmpty = true;
 
                 } else if (getSecurityLists) {
                     helpers.findOpenPorts(getSecurityLists.data, ports,
@@ -57,7 +57,7 @@ module.exports = {
 
                 } else if (getSecurityRules &&
                     (!getSecurityRules.data || !getSecurityRules.data.length)) {
-                   ruleEmpty = true;
+                    ruleEmpty = true;
 
                 } else if (getSecurityRules) {
                     var getSecurityGroups = helpers.addSource(cache, source,
@@ -76,7 +76,7 @@ module.exports = {
                     helpers.addResult(results, 0, 'No security rules found', region);
                 } else if (listEmpty) {
                     helpers.addResult(results, 0, 'No security lists found', region);
-                };
+                }
             }
 
             rcb();

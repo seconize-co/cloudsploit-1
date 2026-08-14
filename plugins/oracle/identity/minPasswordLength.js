@@ -9,10 +9,10 @@ module.exports = {
     recommended_action: 'Update the password policy to require a minimum password length.',
     apis: ['authenticationPolicy:get'],
     compliance: {
-		pci: 'PCI requires a strong password policy. Setting Identity password ' +
-			 'requirements enforces this policy.',
+        pci: 'PCI requires a strong password policy. Setting Identity password ' +
+            'requirements enforces this policy.',
         hipaa: 'HIPAA requires a minimum password length of eight characters.'
-	},
+    },
 
     run: function(cache, settings, callback) {
         var results = [];

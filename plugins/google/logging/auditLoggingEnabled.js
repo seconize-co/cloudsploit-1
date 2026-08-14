@@ -5,7 +5,7 @@ module.exports = {
     title: 'Audit Logging Enabled',
     category: 'Logging',
     description: 'Ensures that default audit logging is enabled on the project.',
-        more_info: 'The default audit logs should be configured to log all admin activities and write and read access to data for all services. In addition, no exempted members should be added to the logs to ensure proper delivery of all audit logs.',
+    more_info: 'The default audit logs should be configured to log all admin activities and write and read access to data for all services. In addition, no exempted members should be added to the logs to ensure proper delivery of all audit logs.',
     link: 'https://cloud.google.com/logging/docs/audit/',
     recommended_action: 'Ensure that the default audit logs are enabled to log all admin activities and write and read access to data for all services.',
     apis: ['projects:getIamPolicy'],
@@ -38,7 +38,7 @@ module.exports = {
                 iamPolicy.auditConfigs.forEach(auditConfig => {
                     if (foundLoggingConfig) return;
                     if (auditConfig.service &&
-                        auditConfig.service === "allServices" &&
+                        auditConfig.service === 'allServices' &&
                         auditConfig.auditLogConfigs &&
                         auditConfig.auditLogConfigs.length) {
 

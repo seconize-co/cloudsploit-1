@@ -68,7 +68,7 @@ module.exports = {
                 });
 
                 dbSystems.data.forEach(dbSystem => {
-                    if (dbSystem.lifecycleState === "AVAILABLE") {
+                    if (dbSystem.lifecycleState === 'AVAILABLE') {
                         if (dbSystem.subnetId && (privateSubnets.indexOf(dbSystem.subnetId) > -1)) {
                             helpers.addResult(results, 0, 'The DB system is in a private subnet', region, dbSystem.id);
                         } else {

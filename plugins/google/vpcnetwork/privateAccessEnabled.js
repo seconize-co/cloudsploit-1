@@ -29,12 +29,12 @@ module.exports = {
             if (subnetworks.err || !subnetworks.data) {
                 helpers.addResult(results, 3, 'Unable to query subnetworks: ' + helpers.addError(subnetworks), region);
                 return rcb();
-            };
+            }
 
             if (!subnetworks.data.length) {
                 helpers.addResult(results, 0, 'No subnetworks present', region);
                 return rcb();
-            };
+            }
 
             var badSubnets = [];
             var regionSubnets = false;
@@ -43,7 +43,7 @@ module.exports = {
                     !subnet.privateIpGoogleAccess) {
                     badSubnets.push(subnet.id);
                 } else if (subnet.creationTimestamp) {
-                    regionSubnets = true
+                    regionSubnets = true;
                 }
             });
 
@@ -63,4 +63,4 @@ module.exports = {
             callback(null, results, source);
         });
     }
-}
+};

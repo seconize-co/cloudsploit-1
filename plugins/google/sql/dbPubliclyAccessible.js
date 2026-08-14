@@ -42,35 +42,36 @@ module.exports = {
             }
             var myIpConfig = {};
             sqlInstances.data.forEach(sqlInstance => {
-                if (sqlInstance.instanceType != "READ_REPLICA_INSTANCE" &&
+                if (sqlInstance.instanceType != 'READ_REPLICA_INSTANCE' &&
                     sqlInstance.settings &&
                     sqlInstance.settings.ipConfiguration) {
-                    myIpConfig = sqlInstance.settings.ipConfiguration
+                    myIpConfig = sqlInstance.settings.ipConfiguration;
                     if (myIpConfig.privateNetwork && !myIpConfig.ipv4Enabled) {
                         helpers.addResult(results, 0,
                             'SQL Instance is not publicly accessible', region, sqlInstance.name);
                     } else if (myIpConfig.ipv4Enabled &&
                                 myIpConfig.authorizedNetworks) {
-                                    var openNetwork = false;
-                                    myIpConfig.authorizedNetworks.forEach(network => {
-                                        if (network.value == '0.0.0.0/0') {
-                                           openNetwork = true;
-                                        }
-                                    })
-                                    if (openNetwork) {
-                                        helpers.addResult(results, 2,
-                                            'SQL Instance is publicly accessible by all IP addresses', region, sqlInstance.name);
-                                    } else if (myIpConfig.authorizedNetworks.length){
-                                        helpers.addResult(results, 1,
-                                            'SQL Instance is publicly accessible by specific IP addresses', region, sqlInstance.name);
-                                    } else {
-                                        helpers.addResult(results, 0,
-                                            'SQL Instance is not publicly accessible', region, sqlInstance.name);
-                                    }
-                                }
-                }else if (sqlInstance.instanceType == "READ_REPLICA_INSTANCE"){
+                        var openNetwork = false;
+                        myIpConfig.authorizedNetworks.forEach(network => {
+                            if (network.value == '0.0.0.0/0') {
+                                openNetwork = true;
+                            }
+                        });
+                        if (openNetwork) {
+                            helpers.addResult(results, 2,
+                                'SQL Instance is publicly accessible by all IP addresses', region, sqlInstance.name);
+                        } else if (myIpConfig.authorizedNetworks.length){
+                            helpers.addResult(results, 1,
+                                'SQL Instance is publicly accessible by specific IP addresses', region, sqlInstance.name);
+                        } else {
+                            helpers.addResult(results, 0,
+                                'SQL Instance is not publicly accessible', region, sqlInstance.name);
+                        }
+                    }
+                // Intentional no-op: read replicas inherit config from the primary instance, deliberately not evaluated independently
+                } else if (sqlInstance.instanceType == 'READ_REPLICA_INSTANCE'){ // eslint-disable-line no-empty
                 }
-            })
+            });
 
             rcb();
         }, function(){
@@ -78,4 +79,4 @@ module.exports = {
             callback(null, results, source);
         });
     }
-}
+};

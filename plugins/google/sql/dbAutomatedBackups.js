@@ -32,13 +32,14 @@ module.exports = {
             }
 
             sqlInstances.data.forEach(sqlInstance => {
-                if (sqlInstance.instanceType != "READ_REPLICA_INSTANCE" &&
+                if (sqlInstance.instanceType != 'READ_REPLICA_INSTANCE' &&
                     sqlInstance.settings &&
                     sqlInstance.settings.backupConfiguration &&
                     sqlInstance.settings.backupConfiguration.enabled) {
                     helpers.addResult(results, 0, 
                         'Automated backups are enabled', region, sqlInstance.name);
-                } else if (sqlInstance.instanceType == "READ_REPLICA_INSTANCE"){
+                // Intentional no-op: read replicas inherit config from the primary instance, deliberately not evaluated independently
+                } else if (sqlInstance.instanceType == 'READ_REPLICA_INSTANCE'){ // eslint-disable-line no-empty
                 } else {
                     helpers.addResult(results, 2, 
                         'Automated backups are not enabled', region, sqlInstance.name);
@@ -51,4 +52,4 @@ module.exports = {
             callback(null, results, source);
         });
     }
-}
+};

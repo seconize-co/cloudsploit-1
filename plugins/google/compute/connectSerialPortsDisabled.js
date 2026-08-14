@@ -52,9 +52,9 @@ module.exports = {
                             if (item &&
                                 item.key === 'serial-port-enable' &&
                                 item.value === 'true') {
-                                badInstances.push(instance.id)
+                                badInstances.push(instance.id);
                             }
-                        })
+                        });
 
                     }
                 });
@@ -69,7 +69,7 @@ module.exports = {
                 (noInstances[region].join(',') === zones[region].join(','))) {
                 helpers.addResult(results, 0, 'No instances found in the region' , region);
             } else if (badInstances.length) {
-                var myInstanceStr = badInstances.join(", ");
+                var myInstanceStr = badInstances.join(', ');
                 helpers.addResult(results, 2,
                     `Connecting to Serial Ports is enabled for the following instances: ${myInstanceStr}`, region);
             } else if (!badInstances.length) {

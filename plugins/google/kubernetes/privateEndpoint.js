@@ -24,12 +24,12 @@ module.exports = {
             if (clusters.err || !clusters.data) {
                 helpers.addResult(results, 3, 'Unable to query Kubernetes clusters: ' + helpers.addError(clusters), region);
                 return rcb();
-            };
+            }
 
             if (!clusters.data.length) {
                 helpers.addResult(results, 0, 'No Kubernetes clusters found', region);
                 return rcb();
-            };
+            }
             clusters.data.forEach(cluster => {
                 if (cluster.privateClusterConfig &&
                     cluster.privateClusterConfig.privateEndpoint) {
@@ -45,4 +45,4 @@ module.exports = {
             callback(null, results, source);
         });
     }
-}
+};

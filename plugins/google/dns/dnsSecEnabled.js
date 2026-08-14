@@ -32,16 +32,16 @@ module.exports = {
             }
 
             managedZones.data.forEach(managedZone => {
-               if (!managedZone.dnssecConfig ||
+                if (!managedZone.dnssecConfig ||
                     (managedZone.dnssecConfig &&
                         (!managedZone.dnssecConfig.state ||
                             (managedZone.dnssecConfig.state &&
                              managedZone.dnssecConfig.state !== 'on')))) {
-                   helpers.addResult(results, 2,
-                       `The managed zone does not have DNS security enabled`, region, managedZone.id);
-               } else {
-                   helpers.addResult(results, 0, 'The managed zone has DNS security enabled', region, managedZone.id);
-               }
+                    helpers.addResult(results, 2,
+                        'The managed zone does not have DNS security enabled', region, managedZone.id);
+                } else {
+                    helpers.addResult(results, 0, 'The managed zone has DNS security enabled', region, managedZone.id);
+                }
             });
 
             rcb();
@@ -50,4 +50,4 @@ module.exports = {
             callback(null, results, source);
         });
     }
-}
+};
