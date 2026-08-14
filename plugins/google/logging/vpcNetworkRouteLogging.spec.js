@@ -241,5 +241,37 @@ describe('vpcNetworkRouteLogging', function () {
 
             plugin.run(cache, {}, callback);
         })
+        it('should include which specific metric filters are missing in the failing message', function (done) {
+            const callback = (err, results) => {
+                expect(results.length).to.be.above(0);
+                expect(results[0].status).to.equal(2);
+                expect(results[0].message).to.include('Log metric for VPC network route changes not found');
+                expect(results[0].message).to.include('missing');
+                expect(results[0].message).to.include('compute.routes.insert');
+                expect(results[0].region).to.equal('global');
+                done()
+            };
+
+            const cache = createCache(
+                null,
+                [
+                    {
+                        "name": "PartialVpcNetworkRouteLogging",
+                        "filter": "resource.type=\"gce_route\" AND jsonPayload.event_subtype=\"compute.routes.delete\"",
+                        "metricDescriptor": {
+                            "type": "logging.googleapis.com/user/PartialVpcNetworkRouteLogging"
+                        }
+                    }
+                ],
+                [
+                    {
+                        "name": "projects/rosy-red-12345/alertPolicies/1",
+                        "conditions": []
+                    }
+                ]
+            );
+
+            plugin.run(cache, {}, callback);
+        })
     })
 });

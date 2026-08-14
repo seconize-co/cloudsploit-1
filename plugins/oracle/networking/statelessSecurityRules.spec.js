@@ -245,6 +245,34 @@ describe('statelessSecurityRules', function () {
 
             plugin.run(cache, {}, callback);
         });
+        it('should include the number of stateful ingress rules in the failing message', function (done) {
+            const callback = (err, results) => {
+                expect(results.length).to.be.above(0)
+                expect(results[0].status).to.equal(2)
+                expect(results[0].message).to.include('The security list has 2 stateful security rules')
+                expect(results[0].region).to.equal('us-ashburn-1')
+                done()
+            };
+
+            const cache = createCache(
+                null,
+                [
+                    {
+                        "id": "G7h3izMy2eouVoMISHnOIq5q2rJXZvvDbrj7/t2P3iM=:Screen Shot 2019-07-24 at 5.12.12 PM.png",
+                        "name": "par-object-20190729-1710",
+                        "ingressSecurityRules": [
+                            { "isStateless": true },
+                            { "isStateless": false },
+                            { "isStateless": false }
+                        ]
+                    }
+                ],
+                [{isStateless: true}],
+                null
+            );
+
+            plugin.run(cache, {}, callback);
+        });
 
     })
 })

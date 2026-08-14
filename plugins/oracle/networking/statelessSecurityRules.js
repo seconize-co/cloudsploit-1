@@ -11,12 +11,12 @@ module.exports = {
     recommended_action: 'Update all security rules to be stateless.',
     apis: ['vcn:list', 'securityList:list','networkSecurityGroup:list','securityRule:list'],
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
         var regions = helpers.regions(settings.govcloud);
 
-        async.each(regions.securityList, function (region, rcb) {
+        async.each(regions.securityList, function(region, rcb) {
 
             if (helpers.checkRegionSubscription(cache, source, results, region)) {
                 var securityLists = helpers.addSource(cache, source,
@@ -48,7 +48,7 @@ module.exports = {
                     }
                     if (!isStateless) {
                         helpers.addResult(results, 2,
-                            `The security list has stateful security rules`, region, securityList.id);
+                            'The security list has ' + statelessInt + ' stateful security rule' + (statelessInt === 1 ? '' : 's'), region, securityList.id);
                         securityListStateless = false;
                     }
                 });
@@ -77,7 +77,7 @@ module.exports = {
                         securityGroupName = securityGroups.data.find(group=> group.id === securityRule.networkSecurityGroups).displayName;
                     }
 
-                    if(!securityRule.isStateless) {
+                    if (!securityRule.isStateless) {
                         if (statefulNSGId.indexOf(securityRule.networkSecurityGroups) < 0) {
                             helpers.addResult(results, 2,
                                 'The network security group' + (securityGroupName ? ': ' + securityGroupName : ' ') + ' has stateful security rules', region, securityRule.networkSecurityGroups);
@@ -98,7 +98,7 @@ module.exports = {
                 }
             }
             rcb();
-        }, function () {
+        }, function() {
             // Global checking goes here
             callback(null, results, source);
         });

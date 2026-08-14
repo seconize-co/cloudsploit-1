@@ -241,5 +241,37 @@ describe('projectOwnershipLogging', function () {
 
             plugin.run(cache, {}, callback);
         })
+        it('should include which specific metric filters are missing in the failing message', function (done) {
+            const callback = (err, results) => {
+                expect(results.length).to.be.above(0);
+                expect(results[0].status).to.equal(2);
+                expect(results[0].message).to.include('Log metric for project ownership changes not found');
+                expect(results[0].message).to.include('missing');
+                expect(results[0].message).to.include('roles/owner');
+                expect(results[0].region).to.equal('global');
+                done()
+            };
+
+            const cache = createCache(
+                null,
+                [
+                    {
+                        "name": "PartialProjectOwnershipLogging",
+                        "filter": "(protoPayload.serviceName=\"cloudresourcemanager.googleapis.com\") AND (ProjectOwnership OR projectOwnerInvitee) OR (protoPayload.serviceData.policyDelta.bindingDeltas.action=\"REMOVE\" AND protoPayload.serviceData.policyDelta.bindingDeltas.role=\"roles/owner\")",
+                        "metricDescriptor": {
+                            "type": "logging.googleapis.com/user/PartialProjectOwnershipLogging"
+                        }
+                    }
+                ],
+                [
+                    {
+                        "name": "projects/rosy-red-12345/alertPolicies/1",
+                        "conditions": []
+                    }
+                ]
+            );
+
+            plugin.run(cache, {}, callback);
+        })
     })
 });

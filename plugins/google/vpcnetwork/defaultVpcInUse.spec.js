@@ -28,6 +28,29 @@ const createCache = (err, data) => {
     }
 };
 
+const createInstancesErrorCache = (networksData, instancesErr) => {
+    return {
+        networks: {
+            list: {
+                'global': {
+                    err: null,
+                    data: networksData
+                }
+            }
+        },
+        instances: {
+            compute: {
+                list: {
+                    'us-central1-a': {
+                        err: instancesErr,
+                        data: null
+                    }
+                }
+            }
+        }
+    }
+};
+
 describe('defaultVpcInUse', function () {
     describe('run', function () {
         it('should give unknown result if a subnetwork error is passed or no data is present', function (done) {
@@ -216,6 +239,35 @@ describe('defaultVpcInUse', function () {
                         ]
                     }
                 ],
+            );
+            plugin.run(cache, {}, callback);
+        });
+        it('should give unknown result for a zone whose instance query errors, instead of silently treating it as no instances', function (done) {
+            const callback = (err, results) => {
+                const zoneResult = results.find(r => r.region === 'us-central1-a');
+                expect(zoneResult).to.not.equal(undefined);
+                expect(zoneResult.status).to.equal(3);
+                expect(zoneResult.message).to.include('Unable to query instances');
+                done()
+            };
+            const cache = createInstancesErrorCache(
+                [
+                    {
+                        id: "459972978914955087",
+                        creationTimestamp: "2021-02-16T22:03:12.817-08:00",
+                        name: "default",
+                        description: "App VPC",
+                        selfLink: "https://www.googleapis.com/compute/v1/projects/test-project/global/networks/default",
+                        autoCreateSubnetworks: false,
+                        subnetworks: [],
+                        routingConfig: {
+                          routingMode: "GLOBAL",
+                        },
+                        mtu: 1460,
+                        kind: "compute#network",
+                    }
+                ],
+                ['instances query error'],
             );
             plugin.run(cache, {}, callback);
         });

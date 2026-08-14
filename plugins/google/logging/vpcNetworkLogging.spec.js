@@ -241,5 +241,37 @@ describe('vpcNetworkLogging', function () {
 
             plugin.run(cache, {}, callback);
         })
+        it('should include which specific metric filters are missing in the failing message', function (done) {
+            const callback = (err, results) => {
+                expect(results.length).to.be.above(0);
+                expect(results[0].status).to.equal(2);
+                expect(results[0].message).to.include('Log metric for VPC network changes not found');
+                expect(results[0].message).to.include('missing');
+                expect(results[0].message).to.include('compute.networks.addPeering');
+                expect(results[0].region).to.equal('global');
+                done()
+            };
+
+            const cache = createCache(
+                null,
+                [
+                    {
+                        "name": "PartialVpcNetworkLogging",
+                        "filter": "resource.type=gce_network AND jsonPayload.event_subtype=\"compute.networks.insert\" OR jsonPayload.event_subtype=\"compute.networks.patch\" OR jsonPayload.event_subtype=\"compute.networks.delete\" OR jsonPayload.event_subtype=\"compute.networks.removePeering\"",
+                        "metricDescriptor": {
+                            "type": "logging.googleapis.com/user/PartialVpcNetworkLogging"
+                        }
+                    }
+                ],
+                [
+                    {
+                        "name": "projects/rosy-red-12345/alertPolicies/1",
+                        "conditions": []
+                    }
+                ]
+            );
+
+            plugin.run(cache, {}, callback);
+        })
     })
 });

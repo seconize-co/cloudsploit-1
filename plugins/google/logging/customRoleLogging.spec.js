@@ -241,5 +241,37 @@ describe('customRoleLogging', function () {
 
             plugin.run(cache, {}, callback);
         })
+        it('should include which specific metric filters are missing in the failing message', function (done) {
+            const callback = (err, results) => {
+                expect(results.length).to.be.above(0);
+                expect(results[0].status).to.equal(2);
+                expect(results[0].message).to.include('Log metric for custom role changes not found');
+                expect(results[0].message).to.include('missing');
+                expect(results[0].message).to.include('UpdateRole');
+                expect(results[0].region).to.equal('global');
+                done()
+            };
+
+            const cache = createCache(
+                null,
+                [
+                    {
+                        "name": "PartialCustomRoleLogging",
+                        "filter": "resource.type=\"iam_role\" AND protoPayload.methodName=\"google.iam.admin.v1.CreateRole\" OR protoPayload.methodName=\"google.iam.admin.v1.DeleteRole\"",
+                        "metricDescriptor": {
+                            "type": "logging.googleapis.com/user/PartialCustomRoleLogging"
+                        }
+                    }
+                ],
+                [
+                    {
+                        "name": "projects/rosy-red-12345/alertPolicies/1",
+                        "conditions": []
+                    }
+                ]
+            );
+
+            plugin.run(cache, {}, callback);
+        })
     })
 });

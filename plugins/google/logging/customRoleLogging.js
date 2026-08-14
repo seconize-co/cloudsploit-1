@@ -101,7 +101,7 @@ module.exports = {
                                     helpers.addResult(results, 0, 'Log alert for custom role changes is enabled', region, alertPolicy.name);
                                 }
                             }
-                        })
+                        });
                     }
                 });
 
@@ -109,7 +109,9 @@ module.exports = {
                     helpers.addResult(results, 2, 'Log alert for custom role changes not found', region);
                 }
             } else {
-                helpers.addResult(results, 2, 'Log metric for custom role changes not found', region);
+                var missingMetricMessage = 'Log metric for custom role changes not found';
+                if (missingMetricStr) missingMetricMessage += `: missing ${missingMetricStr}`;
+                helpers.addResult(results, 2, missingMetricMessage, region);
             }
 
             rcb();

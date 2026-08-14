@@ -37,12 +37,12 @@ module.exports = {
                 return rcb();
             }
             var defVPC = false;
-            var vpcUrl = ''
+            var vpcUrl = '';
             networks.data.forEach(network => {
-               if (network.name == 'default') {
+                if (network.name == 'default') {
                     defVPC = true;
                     vpcUrl = network.selfLink;
-               }
+                }
             });
             if (!defVPC)  {
                 helpers.addResult(results, 0, 'No default VPC found', 'global');
@@ -53,9 +53,12 @@ module.exports = {
             async.each(regions.zones, function(location, icb){
                 location.forEach(loc => {
                     let instances = helpers.addSource(cache, source,
-                    ['instances', 'compute','list', loc]);
+                        ['instances', 'compute','list', loc]);
 
-                    if (!instances || instances.err || !instances.data) {
+                    if (!instances) return;
+
+                    if (instances.err || !instances.data) {
+                        helpers.addResult(results, 3, 'Unable to query instances: ' + helpers.addError(instances), loc);
                     } else if (instances.data.length) {
                         instances.data.forEach(instance => {
                             instance.networkInterfaces.forEach(interface => {
@@ -83,4 +86,4 @@ module.exports = {
             callback(null, results, source);
         });
     }
-}
+};
