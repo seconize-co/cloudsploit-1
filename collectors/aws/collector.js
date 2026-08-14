@@ -1513,7 +1513,7 @@ var collect = function(AWSConfig, settings, callback) {
                         return regionCb();
                     }
                     var paginating = false;
-                    var apiStart = Date.now();
+                    apiStart = Date.now();
                     var executorCb = function(err, data) {
                         console.log(`[API END] ${service}:${callKey} (${region}) took ${Date.now() - apiStart} ms`);
                         if (err) collection[serviceLower][callKey][region].err = err;
