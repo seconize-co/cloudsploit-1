@@ -4,11 +4,14 @@ var helpers = require('../../../helpers/azure');
 module.exports = {
     title: 'File Service Encryption',
     category: 'Storage Accounts',
+    domain: 'Storage',
+    severity: 'High',
     description: 'Ensures data encryption is enabled for File Services',
     more_info: 'File Service encryption protects your data at rest. Azure Storage encrypts your data and automatically decrypts it for you as you access it.',
     recommended_action: 'Ensure that data encryption is enabled for each File Service.',
-    link: 'https://docs.microsoft.com/en-us/azure/storage/common/storage-service-encryption',
+    link: 'https://learn.microsoft.com/en-us/azure/storage/common/storage-service-encryption',
     apis: ['storageAccounts:list'],
+    realtime_triggers: ['microsoftstorage:storageaccounts:write', 'microsoftstorage:storageaccounts:delete'],
 
     run: function(cache, settings, callback) {
         var results = [];

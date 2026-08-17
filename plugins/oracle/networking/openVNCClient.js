@@ -4,6 +4,8 @@ var helpers = require('../../../helpers/oracle/');
 module.exports = {
     title: 'Open VNC Client',
     category: 'Networking',
+    domain: 'Network Access Control',
+    severity: 'Medium',
     description: 'Determine if TCP port 5500 for VNC Client is open to the public',
     more_info: 'While some ports such as HTTP and HTTPS are required to be open ' +
         'to the public to function properly, more sensitive services such as VNC ' +

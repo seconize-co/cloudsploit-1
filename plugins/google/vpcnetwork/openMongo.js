@@ -4,11 +4,14 @@ var helpers = require('../../../helpers/google');
 module.exports = {
     title: 'Open MongoDB',
     category: 'VPC Network',
-    description: 'Determines if TCP port 27017 for MongoDB is open to the public',
+    domain: 'Network Access Control',
+    severity: 'High',
+    description: 'Determines if TCP port 27017, 27018 or 27019 for MongoDB is open to the public',
     more_info: 'While some ports such as HTTP and HTTPS are required to be open to the public to function properly, more sensitive services such as Mongo should be restricted to known IP addresses.',
     link: 'https://cloud.google.com/vpc/docs/using-firewalls',
-    recommended_action: 'Restrict TCP ports 27017 to known IP addresses.',
+    recommended_action: 'Restrict TCP ports 27017, 27018 and 27019 to known IP addresses.',
     apis: ['firewalls:list'],
+    realtime_triggers: ['compute.firewalls.insert', 'compute.firewalls.delete', 'compute.firewalls.patch'],
 
     run: function(cache, settings, callback) {
         var results = [];
@@ -22,7 +25,7 @@ module.exports = {
             if (!firewalls) return rcb();
 
             if (firewalls.err || !firewalls.data) {
-                helpers.addResult(results, 3, 'Unable to query firewall rules: ' + helpers.addError(firewalls), region);
+                helpers.addResult(results, 3, 'Unable to query firewall rules', region, null, null, firewalls.err);
                 return rcb();
             }
 
@@ -32,12 +35,12 @@ module.exports = {
             }
 
             let ports = {
-                'tcp': [27017]
+                'tcp': [27017,27018,27019]
             };
 
             let service = 'Mongo';
 
-            helpers.findOpenPorts(firewalls.data, ports, service, region, results);
+            helpers.findOpenPorts(firewalls.data, ports, service, region, results, cache, source);
 
             rcb();
         }, function(){

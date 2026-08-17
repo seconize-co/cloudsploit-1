@@ -4,6 +4,8 @@ var helpers = require('../../../helpers/google');
 module.exports = {
     title: 'Excessive Firewall Rules',
     category: 'VPC Network',
+    domain: 'Network Access Control',
+    severity: 'Medium',
     description: 'Determines if there are an excessive number of firewall rules in the account',
     more_info: 'Keeping the number of firewall rules to a minimum helps reduce the attack surface of an account. Rather than creating new rules with the same rules for each project, common rules should be grouped under the same firewall rule. For example, instead of adding port 22 from a known IP to every firewall rule, create a single "SSH" firewall rule which can be used on multiple instances.',
     link: 'https://cloud.google.com/vpc/docs/using-firewalls',
@@ -29,6 +31,7 @@ module.exports = {
             default: 30
         }
     },
+    realtime_triggers: ['compute.firewalls.insert', 'compute.firewalls.delete'],
 
     run: function(cache, settings, callback) {
         var config = {
@@ -49,7 +52,7 @@ module.exports = {
             if (!firewalls) return rcb();
 
             if (firewalls.err || !firewalls.data) {
-                helpers.addResult(results, 3, 'Unable to query firewall rules: ' + helpers.addError(firewalls), region);
+                helpers.addResult(results, 3, 'Unable to query firewall rules', region, null, null, firewalls.err);
                 return rcb();
             }
 

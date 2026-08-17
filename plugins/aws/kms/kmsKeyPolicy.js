@@ -3,11 +3,13 @@ var helpers = require('../../../helpers/aws');
 module.exports = {
     title: 'KMS Key Policy',
     category: 'KMS',
+    domain: 'Application Integration',
+    severity: 'High',
     description: 'Validates the KMS key policy to ensure least-privilege access.',
     more_info: 'KMS key policies should be designed to limit the number of users who can perform encrypt and decrypt operations. Each application should use its own key to avoid over exposure.',
     recommended_action: 'Modify the KMS key policy to remove any wildcards and limit the number of users and roles that can perform encrypt and decrypt operations using the key.',
     link: 'http://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html',
-    apis: ['KMS:listKeys', 'STS:getCallerIdentity', 'KMS:getKeyPolicy', 'KMS:describeKey'],
+    apis: ['KMS:listKeys', 'STS:getCallerIdentity', 'KMS:getKeyPolicy', 'KMS:describeKey', 'Organizations:listAccounts'],
     settings: {
         kms_key_policy_max_user_count: {
             name: 'KMS Key Policy Max User Count',
@@ -41,15 +43,22 @@ module.exports = {
                 '2. IAM condition keys which work with "Numeric" or "Date" operators are not used' +
                 '3. Bool values are set to "true" with "Allow" and "false" with "Deny"',
             regex: '^.*$',
-            default: 'aws:PrincipalArn,aws:PrincipalAccount,aws:PrincipalOrgID,aws:SourceAccount,aws:SourceArn,kms:CallerAccount'
+            default: 'aws:PrincipalArn,aws:PrincipalAccount,aws:PrincipalOrgID,aws:SourceAccount,aws:SourceArn,aws:SourceOwner,kms:CallerAccount'
         },
         kms_ignore_aws_managed_keys: {
             name: 'KMS Ignore AWS-managed Keys',
             description: 'If set to true, ignore key policy for AWS-managed KMS keys',
             regex: '^(true|false)$',
             default: 'false'
-        }
+        },
+        kms_whitelist_aws_organization_accounts: {
+            name: 'KMS Whitelist All AWS Organization Accounts',
+            description: 'If true, trust all accounts in current AWS organization',
+            regex: '^(true|false)$',
+            default: 'false'
+        },
     },
+    realtime_triggers: ['kms:CreateKey','kms:PutKeyPolicy'],
 
     run: function(cache, settings, callback) {
         var config = {
@@ -58,7 +67,8 @@ module.exports = {
             kms_key_policy_whitelisted_account_ids: settings.kms_key_policy_whitelisted_account_ids || this.settings.kms_key_policy_whitelisted_account_ids.default,
             kms_key_policy_whitelisted_policy_ids: settings.kms_key_policy_whitelisted_policy_ids || this.settings.kms_key_policy_whitelisted_policy_ids.default,
             kms_key_policy_condition_keys: settings.kms_key_policy_condition_keys || this.settings.kms_key_policy_condition_keys.default,
-            kms_ignore_aws_managed_keys: settings.kms_ignore_aws_managed_keys || this.settings.kms_ignore_aws_managed_keys.default
+            kms_ignore_aws_managed_keys: settings.kms_ignore_aws_managed_keys || this.settings.kms_ignore_aws_managed_keys.default,
+            kms_whitelist_aws_organization_accounts: settings.kms_whitelist_aws_organization_accounts || this.settings.kms_whitelist_aws_organization_accounts.default,
         };
 
         if (config.kms_key_policy_whitelisted_account_ids && config.kms_key_policy_whitelisted_account_ids.length) {
@@ -74,6 +84,7 @@ module.exports = {
         }
 
         config.kms_ignore_aws_managed_keys = (config.kms_ignore_aws_managed_keys == 'true');
+        var whitelistOrganization = (config.kms_whitelist_aws_organization_accounts == 'true');
 
         var allowedConditionKeys = config.kms_key_policy_condition_keys.split(',');
         allowedConditionKeys.push('kms:CallerAccount', 'kms:ViaService');
@@ -87,6 +98,22 @@ module.exports = {
 
         var acctRegion = helpers.defaultRegion(settings);
         var accountId = helpers.addSource(cache, source, ['sts', 'getCallerIdentity', acctRegion, 'data']);
+
+        let organizationAccounts = [];
+        if (whitelistOrganization) {
+            var listAccounts = helpers.addSource(cache, source,
+                ['organizations', 'listAccounts', acctRegion]);
+    
+            if (!listAccounts || listAccounts.err || !listAccounts.data) {
+                helpers.addResult(results, 3,
+                    `Unable to query organization accounts: ${helpers.addError(listAccounts)}`, acctRegion);
+                return callback(null, results, source);
+            }
+
+            organizationAccounts = helpers.getOrganizationAccounts(listAccounts, accountId);
+        }
+
+        config.kms_key_policy_whitelisted_account_ids = config.kms_key_policy_whitelisted_account_ids.concat(organizationAccounts);
 
         async.each(regions.kms, function(region, rcb){
             var listKeys = helpers.addSource(cache, source,
@@ -177,7 +204,7 @@ module.exports = {
                     var conditionalCaller = null;
 
                     if (statement.Condition) {
-                        conditionalCaller = helpers.isValidCondition(statement, allowedConditionKeys, helpers.IAM_CONDITION_OPERATORS, true, accountId);
+                        conditionalCaller = helpers.isValidCondition(statement, allowedConditionKeys, helpers.IAM_CONDITION_OPERATORS, true, accountId, settings);
                     }
 
                     // Check for wildcards without condition

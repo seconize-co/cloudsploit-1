@@ -3,6 +3,8 @@ var helpers = require('../../../helpers/oracle/');
 module.exports = {
     title: 'Excessive Policy Statements',
     category: 'Identity',
+    domain: 'Identity and Access Management',
+    severity: 'Medium',
     description: 'Determine if there are an excessive number of policy statements in the account',
     more_info: 'Keeping the number of policy statements to a minimum helps reduce the chances ' +
         'of compromised accounts causing catastrophic damage to the account. Common statements ' +

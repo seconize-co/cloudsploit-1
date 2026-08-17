@@ -4,10 +4,12 @@ const helpers = require('../../../helpers/azure');
 module.exports = {
     title: 'Open NetBIOS',
     category: 'Network Security Groups',
-    description: 'Determine if UDP port 137 or 138 for NetBIOS is open to the public',
+    domain: 'Network Access Control',
+    severity: 'Medium',
+    description: 'Determine if UDP port 137, 138 or 139 for NetBIOS is open to the public',
     more_info: 'While some ports such as HTTP and HTTPS are required to be open to the public to function properly, more sensitive services such as NetBIOS should be restricted to known IP addresses.',
-    link: 'https://docs.microsoft.com/en-us/azure/virtual-network/manage-network-security-group',
-    recommended_action: 'Restrict UDP ports 137 and 138 to known IP addresses',
+    link: 'https://learn.microsoft.com/en-us/azure/virtual-network/manage-network-security-group',
+    recommended_action: 'Restrict UDP ports 137, 138 and 139 to known IP addresses.',
     apis: ['networkSecurityGroups:listAll'],
     apis_remediate: ['networkSecurityGroups:listAll'],
     remediation_min_version: '202011201836',
@@ -28,6 +30,7 @@ module.exports = {
     },
     actions: {remediate:['networkSecurityGroups:update'], rollback:['networkSecurityGroups:update']},
     permissions: {remediate: ['networkSecurityGroups:update'], rollback: ['networkSecurityGroups:update']},
+    realtime_triggers: ['microsoftnetwork:networksecuritygroups:write','microsoftnetwork:networksecuritygroups:delete','microsoftnetwork:networksecuritygroups:securityrules:write','microsoftnetwork:networksecuritygroups:securityrules:delete'],
 
     run: function(cache, settings, callback) {
         const results = [];
@@ -53,7 +56,7 @@ module.exports = {
             }
 
             var ports = {
-                'UDP': [137, 138]
+                'UDP': [137, 138, 139]
             };
 
             var service = 'NetBIOS';
@@ -74,7 +77,7 @@ module.exports = {
         var baseUrl = 'https://management.azure.com/{resource}?api-version=2020-05-01';
         var method = 'PUT';
         var protocols = ['UDP','*'];
-        var ports = [137, 138];
+        var ports = [137, 138, 139];
         var actions = [];
         var errors = [];
 

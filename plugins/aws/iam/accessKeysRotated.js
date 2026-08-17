@@ -4,7 +4,9 @@ var helpers = require('../../../helpers/aws');
 module.exports = {
     title: 'Access Keys Rotated',
     category: 'IAM',
-    description: 'Ensures access keys are not older than 180 days in order to reduce accidental exposures',
+    domain: 'Identity and Access Management',
+    severity: 'Low',
+    description: 'Ensures access keys are not older than 90 days in order to reduce accidental exposures',
     more_info: 'Access keys should be rotated frequently to avoid having them accidentally exposed.',
     link: 'http://docs.aws.amazon.com/IAM/latest/UserGuide/ManagingCredentials.html',
     recommended_action: 'To rotate an access key, first create a new key, replace the key and secret throughout your app or scripts, then set the previous key to disabled. Once you ensure that no services are broken, then fully delete the old key.',
@@ -23,15 +25,16 @@ module.exports = {
             name: 'Access Keys Rotated Fail',
             description: 'Return a failing result when access keys exceed this number of days without being rotated',
             regex: '^[1-9]{1}[0-9]{0,3}$',
-            default: 180
+            default: 90
         },
         access_keys_rotated_warn: {
             name: 'Access Keys Rotated Warn',
             description: 'Return a warning result when access keys exceed this number of days without being rotated',
             regex: '^[1-9]{1}[0-9]{0,3}$',
-            default: 90
+            default: 45
         }
     },
+    realtime_triggers: ['iam:CreateAccessKey','iam:DeleteAccessKey'],
 
     run: function(cache, settings, callback) {
         var config = {

@@ -4,11 +4,14 @@ var helpers = require('../../../helpers/google');
 module.exports = {
     title: 'Multiple Subnets',
     category: 'VPC Network',
+    domain: 'Network Access Control',
+    severity: 'Medium',
     description: 'Ensures that VPCs have multiple networks to provide a layered architecture',
     more_info: 'A single network within a VPC increases the risk of a broader blast radius in the event of a compromise.',
     link: 'https://cloud.google.com/vpc/docs/vpc',
     recommended_action: 'Create multiple networks/subnets in each VPC and change the architecture to take advantage of public and private tiers.',
     apis: ['networks:list'],
+    realtime_triggers: ['compute.networks.insert', 'compute.networks.delete', 'compute.subnetworks.insert', 'compute.subnetworks.delete'],
 
     run: function(cache, settings, callback) {
         var results = [];
@@ -22,7 +25,7 @@ module.exports = {
             if (!networks) return rcb();
 
             if (networks.err || !networks.data) {
-                helpers.addResult(results, 3, 'Unable to query networks: ' + helpers.addError(networks), region);
+                helpers.addResult(results, 3, 'Unable to query networks: ' + helpers.addError(networks), region, null, null, networks.err);
                 return rcb();
             }
 
@@ -30,6 +33,18 @@ module.exports = {
                 helpers.addResult(results, 0, 'No networks found', region);
                 return rcb();
             }
+
+            let projects = helpers.addSource(cache, source,
+                ['projects','get', 'global']);
+    
+            if (!projects || projects.err || !projects.data || !projects.data.length) {
+                helpers.addResult(results, 3,
+                    'Unable to query for projects: ' + helpers.addError(projects), 'global', null, null, (projects) ? projects.err : null);
+                return rcb();
+            }
+
+            var project = projects.data[0].name;
+
             var subnetRegions;
             networks.data.forEach(network => {
                 regions = helpers.regions();
@@ -87,25 +102,26 @@ module.exports = {
                     }
                 }
 
+                let resource = helpers.createResourceName('networks', network.name, project, 'global');
                 if (passNetworks.length) {
-                    var msg = 'There are ' + myRegions[sub] + ' different subnets used in these regions: ';
+                    let msg = 'There are ' + myRegions[sub] + ' different subnets used in these regions: ';
                     helpers.addResult(results, 0,
-                        msg + passNetworks.join(', '), null, network.id);
+                        msg + passNetworks.join(', '), null, resource);
                 }
                 if (failNetworks.length) {
-                    msg = 'Only one subnet in these regions is used: ';
+                    let msg = 'Only one subnet in these regions is used: ';
                     helpers.addResult(results, 2,
-                        msg + failNetworks.join(', '), null, network.id);
+                        msg + failNetworks.join(', '), null, resource);
                 }
                 if (warnNetworks.length) {
-                    msg = 'Only the default subnet in these regions is used: ';
+                    let msg = 'Only the default subnet in these regions is used: ';
                     helpers.addResult(results, 2,
-                        msg + warnNetworks.join(', '), null, network.id);
+                        msg + warnNetworks.join(', '), null, resource);
                 }
                 if (noNetworks.length) {
-                    msg = 'The VPC does not have any subnets in these regions: ';
+                    let msg = 'The VPC does not have any subnets';
                     helpers.addResult(results, 0,
-                        msg + noNetworks.join(', '), null, network.id);
+                        msg, null, resource);
                 }
             });
 

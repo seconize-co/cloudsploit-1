@@ -4,21 +4,24 @@ var helpers = require('../../../helpers/aws');
 module.exports = {
     title: 'KMS Default Key Usage',
     category: 'KMS',
+    domain: 'Application Integration',
+    severity: 'Medium',
     description: 'Checks AWS services to ensure the default KMS key is not being used',
     more_info: 'It is recommended not to use the default key to avoid encrypting disparate sets of data with the same key. Each application should have its own customer-managed KMS key',
     link: 'http://docs.aws.amazon.com/kms/latest/developerguide/concepts.html',
     recommended_action: 'Avoid using the default KMS key',
-    apis: ['KMS:listKeys', 'KMS:describeKey', 'CloudTrail:describeTrails', 'EC2:describeVolumes',
-        'ElasticTranscoder:listPipelines', 'RDS:describeDBInstances', 'Redshift:describeClusters',
-        'S3:listBuckets', 'S3:getBucketEncryption', 'SES:describeActiveReceiptRuleSet',
-        'Workspaces:describeWorkspaces', 'Lambda:listFunctions', 'CloudWatchLogs:describeLogGroups',
-        'EFS:describeFileSystems', 'STS:getCallerIdentity'],
+    apis: ['KMS:listKeys', 'KMS:describeKey', 'KMS:listAliases', 'CloudTrail:describeTrails',
+        'EC2:describeVolumes', 'RDS:describeDBInstances',
+        'Redshift:describeClusters', 'S3:listBuckets', 'S3:getBucketEncryption', 
+        'SES:describeActiveReceiptRuleSet', 'Workspaces:describeWorkspaces', 'Lambda:listFunctions',
+        'CloudWatchLogs:describeLogGroups', 'EFS:describeFileSystems', 'STS:getCallerIdentity'],
     compliance: {
         pci: 'PCI requires vendor defaults to be changed. While KMS keys ' +
              'do not fall into the same category as vendor-default ' +
              'passwords, it is still strongly encouraged to use a ' +
              'customer-provided CMK rather than the default KMS key.'
     },
+    realtime_triggers: ['cloudtrail:CreateTrail','cloudtrail:UpdateTrail','cloudtrail:DeleteTrail','ec2:CreateVolume','ec2:DeleteVolume','rds:CreateDBInstance','rds:ModifyDBInstance','rds:DeleteDBInstance','redshift:CreateCluster','redshift:ModifyCluster','redshift:DeleteCluster','s3:CreateBucket','s3:DeleteBucket','s3:PutBucketEncryption','ses:CreateReceiptRule','ses:DeleteReceiptRule','ses:UpdateReceiptRule','workspaces:CreateWorkspaces','workspaces:TerminateWorkspaces','lambda:UpdateFunctionConfiguration','lambda:CreateFunction','lambda:DeleteFunction','cloudwatchlogs:CreateLogGroup','cloudwatchlogs:DeleteLogGroup','cloudwatchlogs:AssociateKmsKey','efs:CreateFileSystem',':efs:DeleteFileSystem'],
 
     run: function(cache, settings, callback) {
         var results = [];
@@ -26,6 +29,7 @@ module.exports = {
         var regions = helpers.regions(settings);
 
         var acctRegion = helpers.defaultRegion(settings);
+        var awsOrGov = helpers.defaultPartition(settings);
         var accountId = helpers.addSource(cache, source, ['sts', 'getCallerIdentity', acctRegion, 'data']);
 
         async.each(regions.kms, function(region, rcb) {
@@ -42,6 +46,16 @@ module.exports = {
 
             if (!listKeys.data.length) {
                 helpers.addResult(results, 0, 'No KMS keys found', region);
+                return rcb();
+            }
+
+            var listAliases = helpers.addSource(cache, source, ['kms', 'listAliases', region]);
+
+            if (!listAliases) return rcb();
+
+            if (listAliases.err || !listAliases.data) {
+                helpers.addResult(results, 3,
+                    'Unable to list KMS key aliases: ' + helpers.addError(listAliases), region);
                 return rcb();
             }
 
@@ -80,31 +94,9 @@ module.exports = {
                         if (describeVolumes.data[j].KmsKeyId) {
                             services.push({
                                 serviceName: 'EBS',
-                                resource: 'arn:aws:ec2:' + region + ':' + accountId + ':volume/' + describeVolumes.data[j].VolumeId,
+                                resource: `arn:${awsOrGov}:ec2:` + region + ':' + accountId + ':volume/' + describeVolumes.data[j].VolumeId,
                                 KMSKey: describeVolumes.data[j].KmsKeyId
                             });
-                        }
-                    }
-                }
-            }    
-
-            // For ElasticTranscoder
-            if (region in regions.elastictranscoder) {
-                var listPipelines = helpers.addSource(cache, source, ['elastictranscoder', 'listPipelines', region]);
-
-                if (listPipelines) {
-                    if (listPipelines.err || !listPipelines.data) {
-                        helpers.addResult(results, 3,
-                            'Unable to query for ElasticTranscoder pipelines: ' + helpers.addError(listPipelines), region);
-                    } else {
-                        for (var k in listPipelines.data){
-                            if (listPipelines.data[k].AwsKmsKeyArn) {
-                                services.push({
-                                    serviceName: 'ElasticTranscoder',
-                                    resource: listPipelines.data[k].Arn,
-                                    KMSKey: listPipelines.data[k].AwsKmsKeyArn
-                                });
-                            }
                         }
                     }
                 }
@@ -143,7 +135,7 @@ module.exports = {
                         if (describeClusters.data[m].KmsKeyId){
                             services.push({
                                 serviceName: 'Redshift',
-                                resource: 'arn:aws:redshift:' + region + ':' + accountId + ':cluster:' + describeClusters.data[m].ClusterIdentifier,
+                                resource: `arn:${awsOrGov}:redshift:` + region + ':' + accountId + ':cluster:' + describeClusters.data[m].ClusterIdentifier,
                                 KMSKey: describeClusters.data[m].KmsKeyId
                             });
                         }
@@ -159,16 +151,16 @@ module.exports = {
                     if (describeActiveReceiptRuleSet.err) {
                         helpers.addResult(results, 3,
                             'Unable to query for SES: ' + helpers.addError(describeActiveReceiptRuleSet), region);
-                    } else if (describeActiveReceiptRuleSet.data) {
-                        for (var n in describeActiveReceiptRuleSet.data){
-                            if (describeActiveReceiptRuleSet.data[n].Actions) {
-                                for (var o in describeActiveReceiptRuleSet.data[n].Actions){
-                                    if (describeActiveReceiptRuleSet.data[n].Actions[o].S3Action &&
-                                        describeActiveReceiptRuleSet.data[n].Actions[o].S3Action.KmsKeyArn) {
+                    } else if (describeActiveReceiptRuleSet.data && describeActiveReceiptRuleSet.data.Rules) {
+                        for (var rule of describeActiveReceiptRuleSet.data.Rules) {
+                            if (rule.Actions) {
+                                for (var o in rule.Actions){
+                                    if (rule.Actions[o].S3Action &&
+                                        rule.Actions[o].S3Action.KmsKeyArn) {
                                         services.push({
                                             serviceName: 'SES',
                                             resource: 'SES ruleset',
-                                            KMSKey: describeActiveReceiptRuleSet.data[n].Actions[o].S3Action.KmsKeyArn
+                                            KMSKey: rule.Actions[o].S3Action.KmsKeyArn
                                         });
                                     }
                                 }
@@ -191,7 +183,7 @@ module.exports = {
                             if (describeWorkspaces.data[p].VolumeEncryptionKey) {
                                 services.push({
                                     serviceName: 'Workspaces',
-                                    resource: 'arn:aws:workspaces:' + region + ':' + accountId + ':workspace/' + describeWorkspaces.data[p].WorkspaceId,
+                                    resource: `arn:${awsOrGov}:workspaces:` + region + ':' + accountId + ':workspace/' + describeWorkspaces.data[p].WorkspaceId,
                                     KMSKey: describeWorkspaces.data[p].VolumeEncryptionKey
                                 });
                             }
@@ -253,7 +245,7 @@ module.exports = {
                             if (describeFileSystems.data[s].KmsKeyId) {
                                 services.push({
                                     serviceName: 'EFS',
-                                    resource: 'arn:aws:elasticfilesystem:' + region + ':' + accountId + ':file-system/' + describeFileSystems.data[s].FileSystemId,
+                                    resource: `arn:${awsOrGov}:elasticfilesystem:` + region + ':' + accountId + ':file-system/' + describeFileSystems.data[s].FileSystemId,
                                     KMSKey: describeFileSystems.data[s].KmsKeyId
                                 });
                             }
@@ -265,7 +257,6 @@ module.exports = {
             // For S3 Buckets
             if (region === 'us-east-1') {
                 var listBuckets = helpers.addSource(cache, source, ['s3', 'listBuckets', region]);
-
                 if (listBuckets) {
                     if (listBuckets.err || !listBuckets.data) {
                         helpers.addResult(results, 3,
@@ -294,7 +285,7 @@ module.exports = {
                                                         getBucketEncryption.data[u].Rules[v].ApplyServerSideEncryptionByDefault.KMSMasterKeyID) {
                                                         services.push({
                                                             serviceName: 'S3',
-                                                            resource: 'arn:aws:s3:::' + bucket.Name,
+                                                            resource: `arn:${awsOrGov}:s3:::` + bucket.Name,
                                                             KMSKey: getBucketEncryption.data[u].Rules[v].ApplyServerSideEncryptionByDefault.KMSMasterKeyID
                                                         });
                                                     }
@@ -306,6 +297,13 @@ module.exports = {
                             }
                         }
                     }
+                }
+            }
+
+            var aliasIdMap = {};
+            for (let keyAlias of listAliases.data) {
+                if (keyAlias.AliasName && keyAlias.TargetKeyId) {
+                    aliasIdMap[keyAlias.TargetKeyId] = keyAlias.AliasName;
                 }
             }
 
@@ -331,13 +329,15 @@ module.exports = {
                 }
 
                 var defSTR = 'Default master key (.*)';
-                
+
                 for (var x in keysInfo){
                     if (keysInfo[x].Desc.match(defSTR)){
+                        let keyAlias = aliasIdMap[keysInfo[x].keyId];
                         defaultKeys.push(keysInfo[x].keyId);
+                        defaultKeys.push(keyAlias);
                     }
                 }
-                
+
                 kcb();
             }, function(){
                 var reg = 0;

@@ -4,6 +4,8 @@ var helpers = require('../../../helpers/google');
 module.exports = {
     title: 'OS Login Enabled',
     category: 'Compute',
+    domain: 'Compute',
+    severity: 'Low',
     description: 'Ensures OS login is enabled for the project',
     more_info: 'Enabling OS login ensures that SSH keys used to connect to instances are mapped with IAM users.',
     link: 'https://cloud.google.com/compute/docs/instances/managing-instance-access',
@@ -14,6 +16,7 @@ module.exports = {
             'any required service. This includes using secured technologies ' +
             'such as SSH.'
     },
+    realtime_triggers: ['compute.projects.insert', 'compute.projects.delete'],
 
     run: function(cache, settings, callback) {
         var results = [];
@@ -28,7 +31,7 @@ module.exports = {
 
             if (projects.err || !projects.data) {
                 helpers.addResult(results, 3,
-                    'Unable to query for projects: ' + helpers.addError(projects), region);
+                    'Unable to query for projects: ' + helpers.addError(projects), region, null, null, projects.err);
                 return rcb();
             }
 
@@ -45,21 +48,14 @@ module.exports = {
                     return;
                 }
 
-                let isEnabled = false;
+                let isEnabled = metaData.items.find(item => item.key && item.key.toLowerCase() === 'enable-oslogin' &&
+                    item.value && item.value.toLowerCase() === 'true');
 
-                metaData.items.forEach(item => {
-                    if (item.key.toLowerCase() === 'enable-oslogin' &&
-                         item.value.toLowerCase() === 'true') {
-                        isEnabled = true;
-                    }
-                });
-
-                if (isEnabled === true) {
+                if (isEnabled) {
                     helpers.addResult(results, 0, 'OS login is enabled', region);
                 } else {
                     helpers.addResult(results, 2, 'OS login is disabled', region);
                 }
-
             });
 
             rcb();

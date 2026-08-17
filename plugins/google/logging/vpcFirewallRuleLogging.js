@@ -4,15 +4,18 @@ var helpers = require('../../../helpers/google');
 module.exports = {
     title: 'VPC Firewall Rule Logging',
     category: 'Logging',
+    domain: 'Management and Governance',
+    severity: 'Medium',
     description: 'Ensures that logging and log alerts exist for firewall rule changes',
     more_info: 'Project Ownership is the highest level of privilege on a project, any changes in firewall rule should be heavily monitored to prevent unauthorized changes.',
     link: 'https://cloud.google.com/logging/docs/logs-based-metrics/',
-    recommended_action: 'Ensure that log alerts exist for firewall rule changes.',
-    apis: ['metrics:list', 'alertPolicies:list'],
+    recommended_action: 'Ensure that log metric and alert exist for firewall rule changes.',
+    apis: ['metrics:list', 'alertPolicies:list', 'firewalls:list'],
     compliance: {
         hipaa: 'HIPAA requires the logging of all activity ' +
             'including access and all actions taken.'
     },
+    realtime_triggers: ['logging.MetricsServiceV2.CreateLogMetric', 'logging.MetricsServiceV2.DeleteLogMetric', 'compute.firewalls.insert', 'compute.firewalls.delete' ],
 
     run: function(cache, settings, callback) {
         var results = [];
@@ -20,6 +23,20 @@ module.exports = {
         var regions = helpers.regions();
 
         async.each(regions.alertPolicies, function(region, rcb){
+            let firewalls = helpers.addSource(
+                cache, source, ['firewalls', 'list', region]);
+
+            if (!firewalls) return rcb();
+
+            if (firewalls.err || !firewalls.data) {
+                helpers.addResult(results, 3, 'Unable to query firewall rules', region, null, null, firewalls.err);
+                return rcb();
+            }
+
+            if (!firewalls.data.length) {
+                helpers.addResult(results, 0, 'No firewall rules found', region);
+                return rcb();
+            }
             var metrics = helpers.addSource(cache, source,
                 ['metrics', 'list', region]);
 
@@ -30,13 +47,13 @@ module.exports = {
 
             if ((metrics.err && metrics.err.length > 0) || !metrics.data) {
                 helpers.addResult(results, 3,
-                    'Unable to query for log metrics: ' + helpers.addError(metrics), region);
+                    'Unable to query for log metrics: ' + helpers.addError(metrics), region, null, null, metrics.err);
                 return rcb();
             }
 
             if ((alertPolicies.err && alertPolicies.err.length > 0) || !alertPolicies.data ) {
                 helpers.addResult(results, 3,
-                    'Unable to query for log alert policies: ' + helpers.addError(alertPolicies), region);
+                    'Unable to query for log alert policies: ' + helpers.addError(alertPolicies), region, null, null, alertPolicies.err);
                 return rcb();
             }
 
@@ -52,37 +69,38 @@ module.exports = {
 
             var metricExists = false;
             var metricName = '';
-            var missingMetricStr;
 
             var testMetrics = [
-                'resource.type="gce_firewall_rule" AND jsonPayload.event_subtype="compute.firewalls.patch"',
-                'jsonPayload.event_subtype="compute.firewalls.insert"'
+                'resource.type="gce_firewall_rule" AND protoPayload.methodName="v1.compute.firewalls.patch"',
+                'protoPayload.methodName="v1.compute.firewalls.insert"'
             ];
 
-            metrics.data.forEach(metric => {
+            let disabled = false;
+            for (let metric of metrics.data) {
                 if (metric.filter) {
-                    if (metricExists) return;
-                    var checkMetrics = metric.filter.trim().split(' OR ');
+                    if (metricExists) continue;
+                    var checkMetrics = metric.filter.trim().replace(/\r|\n/g, '');
                     var missingMetrics = [];
-
                     testMetrics.forEach(testMetric => {
                         if (checkMetrics.indexOf(testMetric) === -1) {
                             missingMetrics.push(testMetric);
                         }
                     });
 
-                    if (missingMetrics.length > 2) {
-                        return;
-                    } else if (missingMetrics.length > 0) {
-                        missingMetricStr = missingMetrics.join(', ');
-                    } else if (missingMetrics.length === 0) {
-                        metricExists = true;
-                        metricName = metric.metricDescriptor.type;
+                    if (missingMetrics.length === 0) {
+                        if (metric.disabled) disabled = true;
+                        else {
+                            disabled = false;
+                            metricExists = true;
+                            metricName = metric.metricDescriptor.type;
+                        }
                     }
                 }
-            });
+            }
 
-            if (metricExists && metricName.length) {
+            if (disabled) {
+                helpers.addResult(results, 2, 'Log metric for firewall rule changes is disbled', region);
+            } else if (metricExists && metricName.length) {
                 var conditionFound = false;
 
                 alertPolicies.data.forEach(alertPolicy => {
@@ -108,7 +126,7 @@ module.exports = {
                 }
             } else {
                 var missingMetricMessage = 'Log metric for firewall rule changes not found';
-                if (missingMetricStr) missingMetricMessage += `: missing ${missingMetricStr}`;
+                if (missingMetrics && missingMetrics.length) missingMetricMessage += `: missing ${missingMetrics.join(', ')}`;
                 helpers.addResult(results, 2, missingMetricMessage, region);
             }
 
@@ -119,7 +137,3 @@ module.exports = {
         });
     }
 };
-
-
-
-

@@ -4,6 +4,8 @@ var helpers = require('../../../helpers/aws');
 module.exports = {
     title: 'Secrets Manager Encrypted Secrets',
     category: 'Secrets Manager',
+    domain: 'Identity and Access Management',
+    severity: 'High',
     description: 'Ensures Secrets Manager Secrets are encrypted',
     more_info: 'Secrets Manager Secrets should be encrypted. This allows their values to be used by approved systems, while restricting access to other users of the account.',
     recommended_action: 'Encrypt Secrets Manager Secrets',
@@ -27,11 +29,13 @@ module.exports = {
             default: 'awskms',
         }
     },
+    realtime_triggers: ['secretesmanager:CreateSecret', 'secretesmanager:UpdateSecret','secretesmanager:DeleteSecret'],
 
     run: function(cache, settings, callback) {
         var results = [];
         var source = {};
         var regions = helpers.regions(settings);
+        var awsOrGov = helpers.defaultPartition(settings);
 
         var desiredEncryptionLevelString = settings.secretsmanager_minimum_encryption_level || this.settings.secretsmanager_minimum_encryption_level.default;
         var desiredEncryptionLevel = helpers.ENCRYPTION_LEVELS.indexOf(desiredEncryptionLevelString);
@@ -57,7 +61,7 @@ module.exports = {
 
                 if (!secret.KmsKeyId) encryptionLevel = 2; //awskms
                 else {
-                    const keyId = secret.KmsKeyId.startsWith('arn:aws:kms')
+                    const keyId = secret.KmsKeyId.startsWith(`arn:${awsOrGov}:kms`)
                         ? secret.KmsKeyId.split('/')[1]
                         : secret.KmsKeyId;
 

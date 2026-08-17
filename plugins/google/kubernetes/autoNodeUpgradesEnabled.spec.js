@@ -4,11 +4,18 @@ var plugin = require('./autoNodeUpgradesEnabled');
 
 const createCache = (err, data) => {
     return {
-        clusters: {
-            list: {
+        kubernetes: {
+                list: {
+                    'global': {
+                        err: err,
+                        data: data
+                }
+            }
+        },
+        projects: {
+            get: {
                 'global': {
-                    err: err,
-                    data: data
+                    data: [ { name: 'testproj' }]
                 }
             }
         }
@@ -55,7 +62,7 @@ describe('autoNodeUpgradesEnabled', function () {
             const callback = (err, results) => {
                 expect(results.length).to.be.above(0);
                 expect(results[0].status).to.equal(0);
-                expect(results[0].message).to.include('Auto upgrades are enabled for the node pool of the cluster');
+                expect(results[0].message).to.include('Auto upgrades are enabled for all node pools');
                 expect(results[0].region).to.equal('global');
                 done()
             };
@@ -214,7 +221,7 @@ describe('autoNodeUpgradesEnabled', function () {
             const callback = (err, results) => {
                 expect(results.length).to.be.above(0);
                 expect(results[0].status).to.equal(2);
-                expect(results[0].message).to.include('Auto upgrades are disabled for the node pool of the cluster');
+                expect(results[0].message).to.include('Auto upgrades are disabled for these node pools');
                 expect(results[0].region).to.equal('global');
                 done()
             };

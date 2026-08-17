@@ -4,6 +4,8 @@ var helpers = require('../../../helpers/google');
 module.exports = {
     title: 'Custom Role Logging',
     category: 'Logging',
+    domain: 'Management and Governance',
+    severity: 'Medium',
     description: 'Ensures that logging and log alerts exist for custom role creation and changes',
     more_info: 'Project Ownership is the highest level of privilege on a project, any changes in custom role should be heavily monitored to prevent unauthorized changes.',
     link: 'https://cloud.google.com/logging/docs/logs-based-metrics/',
@@ -13,6 +15,7 @@ module.exports = {
         hipaa: 'HIPAA requires the logging of all activity ' +
             'including access and all actions taken.'
     },
+    realtime_triggers: ['logging.MetricsServiceV2.CreateLogMetric', 'logging.MetricsServiceV2.DeleteLogMetric'],
 
     run: function(cache, settings, callback) {
         var results = [];
@@ -30,13 +33,13 @@ module.exports = {
 
             if ((metrics.err && metrics.err.length > 0) || !metrics.data) {
                 helpers.addResult(results, 3,
-                    'Unable to query for log metrics: ' + helpers.addError(metrics), region);
+                    'Unable to query for log metrics: ' + helpers.addError(metrics), region, null, null, metrics.err);
                 return rcb();
             }
 
             if ((alertPolicies.err && alertPolicies.err.length > 0) || !alertPolicies.data ) {
                 helpers.addResult(results, 3,
-                    'Unable to query for log alert policies: ' + helpers.addError(alertPolicies), region);
+                    'Unable to query for log alert policies: ' + helpers.addError(alertPolicies), region, null, null, alertPolicies.err);
                 return rcb();
             }
 
@@ -52,7 +55,7 @@ module.exports = {
 
             var metricExists = false;
             var metricName = '';
-            var missingMetricStr;
+            var missingMetrics = [];
 
             var testMetrics = [
                 'resource.type="iam_role" AND protoPayload.methodName="google.iam.admin.v1.CreateRole"',
@@ -65,7 +68,7 @@ module.exports = {
                 if (metric.filter) {
                     if (metricExists) return;
                     var checkMetrics = metric.filter.trim().split(' OR ');
-                    var missingMetrics = [];
+                    missingMetrics = [];
 
                     testMetrics.forEach(testMetric => {
                         if (checkMetrics.indexOf(testMetric) === -1) {
@@ -75,8 +78,6 @@ module.exports = {
 
                     if (missingMetrics.length > 2) {
                         return;
-                    } else if (missingMetrics.length > 0) {
-                        missingMetricStr = missingMetrics.join(', ');
                     } else if (missingMetrics.length === 0) {
                         metricExists = true;
                         metricName = metric.metricDescriptor.type;
@@ -110,7 +111,7 @@ module.exports = {
                 }
             } else {
                 var missingMetricMessage = 'Log metric for custom role changes not found';
-                if (missingMetricStr) missingMetricMessage += `: missing ${missingMetricStr}`;
+                if (missingMetrics && missingMetrics.length) missingMetricMessage += `: missing ${missingMetrics.join(', ')}`;
                 helpers.addResult(results, 2, missingMetricMessage, region);
             }
 

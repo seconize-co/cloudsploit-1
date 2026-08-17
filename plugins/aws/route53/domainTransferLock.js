@@ -3,11 +3,14 @@ var helpers = require('../../../helpers/aws');
 module.exports = {
     title: 'Domain Transfer Lock',
     category: 'Route53',
+    domain: 'Content Delivery',
+    severity: 'Medium',
     description: 'Ensures domains have the transfer lock set',
     more_info: 'To avoid having a domain maliciously transferred to a third-party, all domains should enable the transfer lock unless actively being transferred.',
     link: 'http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-transfer-from-route-53.html',
     recommended_action: 'Enable the transfer lock for the domain',
     apis: ['Route53Domains:listDomains'],
+    realtime_triggers: ['route53domains:RegisterDomain', 'route53domain:EnableDomainTransferLock', 'route53domain:DisableDomainTransferLock','route53domians:DeleteDomain'],
 
     run: function(cache, settings, callback) {
         var results = [];
@@ -31,12 +34,39 @@ module.exports = {
             return callback(null, results, source);
         }
 
+        var dtlUnsupportedDomains= [
+            '.za',
+            '.cl',
+            '.ar',
+            '.au',
+            '.nz',
+            '.au',
+            '.jp',
+            '.qa',
+            '.ru',
+            '.ch',
+            '.de',
+            '.es',
+            '.eu',
+            'fi',
+            '.it',
+            '.nl',
+            '.se',
+        ];
+        var unsupported = false;
+
         for (var i in listDomains.data) {
             var domain = listDomains.data[i];
+
             if (!domain.DomainName) continue;
 
-            // Skip .uk and .co.uk domains
-            if (domain.DomainName.indexOf('.uk') > -1) {
+            dtlUnsupportedDomains.forEach((region) => {
+                if (domain.DomainName.includes(region)) {
+                    unsupported = true;
+                }
+            });
+            // Skip the unsupported domains
+            if (unsupported) {
                 helpers.addResult(results, 0,
                     'Domain: ' + domain.DomainName + ' does not support transfer locks',
                     'global', domain.DomainName);

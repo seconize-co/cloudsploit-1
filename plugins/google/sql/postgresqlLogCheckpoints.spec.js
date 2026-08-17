@@ -3,13 +3,18 @@ var plugin = require('./postgresqlLogCheckpoints');
 
 const createCache = (err, data) => {
     return {
-        instances: {
             sql: {
                 list: {
                     'global': {
                         err: err,
                         data: data
                     }
+                }
+        },
+        projects: {
+            get: {
+                'global': {
+                    data: [{ name: 'test-project' }]
                 }
             }
         }
@@ -168,7 +173,7 @@ describe('postgresqlLogCheckpoints', function () {
             const callback = (err, results) => {
                 expect(results.length).to.be.above(0);
                 expect(results[0].status).to.equal(0);
-                expect(results[0].message).to.include('SQL instance database version is not of PosgreSQL type');
+                expect(results[0].message).to.include('SQL instance database version is not of PostgreSQL type');
                 expect(results[0].region).to.equal('global');
                 done()
             };

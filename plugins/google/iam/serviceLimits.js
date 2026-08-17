@@ -4,6 +4,8 @@ var helpers = require('../../../helpers/google');
 module.exports = {
     title: 'Service Limits',
     category: 'IAM',
+    domain: 'Identity and Access Management',
+    severity: 'Medium',
     description: 'Determines if the number of resources is close to the per-account limit.',
     more_info: 'Google limits accounts to certain numbers of resources. Exceeding those limits could prevent resources from launching.',
     link: 'https://cloud.google.com/resource-manager/docs/limits',
@@ -23,6 +25,7 @@ module.exports = {
             default: 75
         }
     },
+    realtime_triggers: ['compute.projects.insert', 'compute.projects.delete'],
 
     run: function(cache, settings, callback) {
         var config = {
@@ -43,7 +46,7 @@ module.exports = {
             if (!projects) return rcb();
 
             if (projects.err || !projects.data) {
-                helpers.addResult(results, 3, 'Unable to query projects: ' + helpers.addError(projects), region);
+                helpers.addResult(results, 3, 'Unable to query projects', region, null, null, projects.err);
                 return rcb();
             }
 

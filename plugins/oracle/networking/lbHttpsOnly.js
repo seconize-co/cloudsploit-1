@@ -4,6 +4,8 @@ var helpers = require('../../../helpers/oracle');
 module.exports = {
     title: 'Load Balancer HTTPS Only',
     category: 'Networking',
+    domain: 'Network Access Control',
+    severity: 'Medium',
     description: 'Ensures LBs are configured to only accept ' +
                  'connections on HTTPS ports.',
     more_info: 'For maximum security, LBs can be configured to only ' +

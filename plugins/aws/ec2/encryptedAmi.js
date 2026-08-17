@@ -4,6 +4,8 @@ var helpers = require('../../../helpers/aws');
 module.exports = {
     title: 'Encrypted AMI',
     category: 'EC2',
+    domain: 'Compute',
+    severity: 'High',
     description: 'Ensures EBS-backed AMIs are configured to use encryption',
     more_info: 'AMIs with unencrypted data volumes can be used to launch unencrypted instances that place data at risk.',
     link: 'https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIEncryption.html',
@@ -15,6 +17,7 @@ module.exports = {
                 'allow it to remain compliant with the encryption at-rest ' +
                 'regulatory requirement.'
     },
+    realtime_triggers: ['ec2:CreateImage', 'ec2:CopyImage', 'ec2:DeregisterImage'],
 
     run: function(cache, settings, callback) {
         var results = [];

@@ -3,6 +3,8 @@ var helpers = require('../../../helpers/aws');
 module.exports = {
     title: 'Users Password Last Used',
     category: 'IAM',
+    domain: 'Identity and Access Management',
+    severity: 'Medium',
     description: 'Detects users with password logins that have not been used ' +
                  'for a period of time and that should be decommissioned',
     more_info: 'Having numerous, unused user accounts extends the attack surface. ' +
@@ -22,15 +24,16 @@ module.exports = {
             name: 'Users Password Last Used Fail',
             description: 'Return a failing result when users with password logins exceed this number of days without being used',
             regex: '^[1-9]{1}[0-9]{0,3}$',
-            default: 180
+            default: 45
         },
         users_password_last_used_warn: {
             name: 'Users Password Last Used Warn',
             description: 'Return a warning result when users with password logins exceed this number of days without being used',
             regex: '^[1-9]{1}[0-9]{0,3}$',
-            default: 90
+            default: 30
         }
     },
+    realtime_triggers: ['iam:CreateUser','iam:DeleteUser'],
 
     run: function(cache, settings, callback) {
         var config = {
