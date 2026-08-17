@@ -134,5 +134,21 @@ describe('backupVaultPolicies', function () {
                 done();
             });
         });
+
+        it('should PASS if Backup vault has no associated policy attached', function (done) {
+            const cache = createCache(
+                [listBackupVaults[0]],
+                null,
+                null,
+                { message: `Vault ${listBackupVaults[0].BackupVaultArn} has no associated vault policy` }
+            );
+            backupVaultPolicies.run(cache, {}, (err, results) => {
+                expect(results.length).to.equal(1);
+                expect(results[0].status).to.equal(0);
+                expect(results[0].region).to.equal('us-east-1');
+                expect(results[0].message).to.include('Backup Vault has no associated policy attached')
+                done();
+            });
+        });
     });
 });

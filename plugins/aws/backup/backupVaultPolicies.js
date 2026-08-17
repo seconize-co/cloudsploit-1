@@ -45,7 +45,7 @@ module.exports = {
                 let getBackupVaultAccessPolicy = helpers.addSource(cache, source,
                     ['backup', 'getBackupVaultAccessPolicy', region, vault.BackupVaultName]);
 
-                if (getBackupVaultAccessPolicy.err && getBackupVaultAccessPolicy.err.message === `Backup Vault ${resource} has no associated POLICY`) {
+                if (getBackupVaultAccessPolicy.err && getBackupVaultAccessPolicy.err.message === `Vault ${resource} has no associated vault policy`) {
                     helpers.addResult(results, 0, 'Backup Vault has no associated policy attached', region, resource);
                 } else if (!getBackupVaultAccessPolicy || getBackupVaultAccessPolicy.err || !getBackupVaultAccessPolicy.data || !getBackupVaultAccessPolicy.data.Policy) {
                     helpers.addResult(results, 3, `Unable to get Backup vault access policy: ${helpers.addError(getBackupVaultAccessPolicy)}`, region, resource);

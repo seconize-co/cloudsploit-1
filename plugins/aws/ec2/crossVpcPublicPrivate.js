@@ -32,7 +32,7 @@ module.exports = {
             if (!describeSubnets) return rcb();
 
             // error handling
-            if (describeSubnets.data || describeSubnets.err) {
+            if (!describeSubnets.data || describeSubnets.err) {
                 helpers.addResult(results, 3, 'Unable to query for Subnets: ' + helpers.addError(describeSubnets), region);
                 return rcb();
             }
