@@ -454,6 +454,21 @@ describe('vpcFirewallRuleLogging', function () {
                         "name": "projects/rosy-red-12345/alertPolicies/1",
                         "conditions": []
                     }
+                ],
+                [
+                    {
+                        id: '7656774017226387060',
+                        creationTimestamp: '2021-05-07T12:10:19.939-07:00',
+                        name: 'default-allow-ssh',
+                        description: 'Allow SSH from anywhere',
+                        network: 'https://www.googleapis.com/compute/v1/projects/test-project/global/networks/test-vpc',
+                        priority: 65534,
+                        sourceRanges: [ '0.0.0.0/0' ],
+                        direction: 'INGRESS',
+                        logConfig: { enable: true},
+                        disabled: false,
+                        kind: 'compute#firewall'
+                    }
                 ]
             );
 

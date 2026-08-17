@@ -126,7 +126,7 @@ module.exports = {
                 }
             } else {
                 var missingMetricMessage = 'Log metric for firewall rule changes not found';
-                if (missingMetricStr) missingMetricMessage += `: missing ${missingMetricStr}`;
+                if (missingMetrics && missingMetrics.length) missingMetricMessage += `: missing ${missingMetrics.join(', ')}`;
                 helpers.addResult(results, 2, missingMetricMessage, region);
             }
 

@@ -55,6 +55,7 @@ module.exports = {
 
             var metricExists = false;
             var metricName = '';
+            var missingMetrics = [];
 
             var testMetrics = [
                 'resource.type="iam_role" AND protoPayload.methodName="google.iam.admin.v1.CreateRole"',
@@ -67,7 +68,7 @@ module.exports = {
                 if (metric.filter) {
                     if (metricExists) return;
                     var checkMetrics = metric.filter.trim().split(' OR ');
-                    var missingMetrics = [];
+                    missingMetrics = [];
 
                     testMetrics.forEach(testMetric => {
                         if (checkMetrics.indexOf(testMetric) === -1) {
@@ -110,7 +111,7 @@ module.exports = {
                 }
             } else {
                 var missingMetricMessage = 'Log metric for custom role changes not found';
-                if (missingMetricStr) missingMetricMessage += `: missing ${missingMetricStr}`;
+                if (missingMetrics && missingMetrics.length) missingMetricMessage += `: missing ${missingMetrics.join(', ')}`;
                 helpers.addResult(results, 2, missingMetricMessage, region);
             }
 
