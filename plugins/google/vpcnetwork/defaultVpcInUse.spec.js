@@ -15,13 +15,18 @@ const createCache = (err, data) => {
                 }
             }
         },
-        instances: {
             compute:{
                 list: {
                     'us-central1-a':{
                         err: err,
                         data: instances
                     }
+                }
+        },
+        projects: {
+            get: {
+                'global': {
+                    data: 'testProj'
                 }
             }
         }
@@ -38,13 +43,18 @@ const createInstancesErrorCache = (networksData, instancesErr) => {
                 }
             }
         },
-        instances: {
-            compute: {
-                list: {
-                    'us-central1-a': {
-                        err: instancesErr,
-                        data: null
-                    }
+        compute: {
+            list: {
+                'us-central1-a': {
+                    err: instancesErr,
+                    data: null
+                }
+            }
+        },
+        projects: {
+            get: {
+                'global': {
+                    data: [{ name: 'testProj' }]
                 }
             }
         }

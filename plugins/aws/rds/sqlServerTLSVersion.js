@@ -4,6 +4,8 @@ var helpers = require('../../../helpers/aws');
 module.exports = {
     title: 'SQL Server TLS Version',
     category: 'RDS',
+    domain: 'Databases',
+    severity: 'Medium',
     description: 'Ensures RDS SQL Servers do not allow outdated TLS certificate versions',
     more_info: 'TLS 1.2 or higher should be used for all TLS connections to RDS. A parameter group can be used to enforce this connection type.',
     link: 'https://aws.amazon.com/about-aws/whats-new/2020/07/amazon-rds-for-sql-server-supports-disabling-old-versions-of-tls-and-ciphers/',
@@ -20,7 +22,7 @@ module.exports = {
         remediate: ['rds:ModifyDBParameterGroup'],
         rollback: ['rds:ModifyDBParameterGroup']
     },
-    realtime_triggers: ['rds:CreateDBParameterGroup', 'rds:ModifyDBParameterGroup'],
+    realtime_triggers: ['rds:CreateDBParameterGroup', 'rds:ModifyDBParameterGroup','rds:DeleteDBParameterGroup'],
     
     run: function(cache, settings, callback) {
         var results = [];

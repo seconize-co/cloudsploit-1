@@ -4,11 +4,13 @@ var helpers = require('../../../helpers/oracle/');
 module.exports = {
     title: 'Open Oracle',
     category: 'Networking',
-    description: 'Determine if TCP port 1521 for Oracle is open to the public',
+    domain: 'Network Access Control',
+    severity: 'High',
+    description: 'Determine if TCP port 1521, 2483 for Oracle is open to the public',
     more_info: 'While some ports such as HTTP and HTTPS are required to be open ' +
         'to the public to function properly, more sensitive services such as Oracle ' +
         'should be restricted to known IP addresses.',
-    recommended_action: 'Restrict TCP ports 1521 to known IP addresses',
+    recommended_action: 'Restrict TCP ports 1521, 2483 to known IP addresses',
     link: 'https://docs.cloud.oracle.com/iaas/Content/Network/Concepts/securitylists.htm',
     apis: ['vcn:list', 'securityList:list','networkSecurityGroup:list','securityRule:list'],
 
@@ -25,7 +27,7 @@ module.exports = {
                 var listEmpty = false;
 
                 var ports = {
-                    'tcp': [1521]
+                    'tcp': [1521, 2483]
                 };
 
                 var service = 'Oracle';

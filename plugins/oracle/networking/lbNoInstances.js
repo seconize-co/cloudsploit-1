@@ -4,6 +4,8 @@ var helpers = require('../../../helpers/oracle');
 module.exports = {
     title: 'Load Balancer No Instances',
     category: 'Networking',
+    domain: 'Network Access Control',
+    severity: 'Low',
     description: 'Detects LBs that have no backend instances attached',
     more_info: 'All LBs should have backend server resources. ' +
                'Those without any are consuming costs without providing ' +
@@ -39,6 +41,8 @@ module.exports = {
 
                 async.each(loadBalancers.data, function(lb, cb) {
                     if (lb.backendSets) {
+                        if (!lb.displayName) return cb;
+                        
                         var lbBackend = lb.backendSets['bs_' + lb.displayName];
                         if (lbBackend &&
                             lbBackend.backends &&

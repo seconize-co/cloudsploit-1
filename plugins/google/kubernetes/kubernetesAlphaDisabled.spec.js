@@ -3,11 +3,18 @@ var plugin = require('./kubernetesAlphaDisabled');
 
 const createCache = (err, data) => {
     return {
-        clusters: {
-            list: {
+        kubernetes: {
+                list: {
+                    'global': {
+                        err: err,
+                        data: data
+                }
+            }
+        },
+        projects: {
+            get: {
                 'global': {
-                    err: err,
-                    data: data
+                    data: [ { name: 'testproj' }]
                 }
             }
         }

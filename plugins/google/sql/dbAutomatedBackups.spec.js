@@ -3,13 +3,18 @@ var plugin = require('./dbAutomatedBackups');
 
 const createCache = (err, data) => {
     return {
-        instances: {
             sql: {
                 list: {
                     'global': {
                         err: err,
                         data: data
                     }
+                }
+            },
+        projects: {
+            get: {
+                'global': {
+                    data: [{ name: 'test-project' }]
                 }
             }
         }

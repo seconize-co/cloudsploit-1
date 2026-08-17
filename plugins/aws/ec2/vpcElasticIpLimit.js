@@ -4,6 +4,8 @@ var helpers = require('../../../helpers/aws');
 module.exports = {
     title: 'VPC Elastic IP Limit',
     category: 'EC2',
+    domain: 'Compute',
+    severity: 'Medium',
     description: 'Determine if the number of allocated VPC EIPs is close to the AWS per-account limit',
     more_info: 'AWS limits accounts to certain numbers of resources. Exceeding those limits could prevent resources from launching.',
     recommended_action: 'Contact AWS support to increase the number of EIPs available',
@@ -79,7 +81,15 @@ module.exports = {
             var eips = 0;
 
             for (var i in describeAddresses.data) {
-                if (describeAddresses.data[i].Domain === 'vpc') { eips++; }
+                if (describeAddresses.data[i].Domain === 'vpc') {
+                    if (describeAddresses.data[i].ServiceManaged) {
+                        if (describeAddresses.data[i].ServiceManaged !== 'alb') {
+                            eips++;
+                        }
+                    } else {
+                        eips++;
+                    }
+                }
             }
 
             var percentage = Math.ceil((eips / limits['vpc-max-elastic-ips'])*100);

@@ -4,11 +4,14 @@ var helpers = require('../../../helpers/aws');
 module.exports = {
     title: 'Object Lock Enabled',
     category: 'CloudTrail',
+    domain: 'Compliance',
+    severity: 'Medium',
     description: 'Ensures that AWS CloudTrail S3 buckets use Object Lock for data protection and regulatory compliance.',
     more_info: 'CloudTrail buckets should be configured to have object lock enabled. You can use it to prevent an object from being deleted or overwritten for a fixed amount of time or indefinitely.',
     recommended_action: 'Edit trail to use a bucket with object locking enabled.',
     link: 'https://docs.aws.amazon.com/AmazonS3/latest/dev/object-lock-managing.html',
     apis: ['CloudTrail:describeTrails', 'S3:getObjectLockConfiguration', 'S3:listBuckets'],
+    realtime_triggers: ['cloudtrail:CreateTrail', 'cloudtrail:UpdateTrail','cloudtrail:DeleteTrail','s3:DeleteBucket'],
 
     run: function(cache, settings, callback) {
         var results = [];
@@ -34,12 +37,13 @@ module.exports = {
             }
 
             async.each(describeTrails.data, function(trail, cb){
-                if (!trail.S3BucketName) return cb();
+                if (!trail.S3BucketName || (trail.HomeRegion && trail.HomeRegion.toLowerCase() !== region)) return cb();
                 // Skip CloudSploit-managed events bucket
                 if (trail.S3BucketName == helpers.CLOUDSPLOIT_EVENTS_BUCKET) return cb();
 
                 var s3Region = helpers.defaultRegion(settings);
-                var resource = 'arn:aws:s3:::' + trail.S3BucketName;
+                var awsOrGov = helpers.defaultPartition(settings);
+                var resource = `arn:${awsOrGov}:s3:::` + trail.S3BucketName;
                 
                 var getObjectLockConfiguration = helpers.addSource(cache, source,
                     ['s3', 'getObjectLockConfiguration', s3Region, trail.S3BucketName]);

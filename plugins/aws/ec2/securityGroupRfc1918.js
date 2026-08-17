@@ -4,6 +4,8 @@ var helpers = require('../../../helpers/aws');
 module.exports = {
     title: 'Open RFC 1918',
     category: 'EC2',
+    domain: 'Compute',
+    severity: 'Medium',
     description: 'Ensures EC2 security groups are configured to deny inbound traffic from RFC-1918 CIDRs',
     more_info: 'RFC-1918 IP addresses are considered reserved private addresses and should not be used in security groups.',
     link: 'https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html',
@@ -13,10 +15,11 @@ module.exports = {
         private_cidrs: {
             name: 'EC2 RFC 1918 CIDR Addresses',
             description: 'A comma-separated list of CIDRs that indicates reserved private addresses',
-            regex: '/^(?=.*[^.]$)((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).?){4}$/',
+            regex: '^(?:(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).?){4}/(?:[0-9]|[1-2][0-9]|3[0-2])(?:,(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).?){4}/(?:[0-9]|[1-2][0-9]|3[0-2]))*)?$',
             default: '10.0.0.0/8,172.16.0.0/12,192.168.0.0/16'
         }
     },
+    realtime_triggers: ['ec2:CreateSecurityGroup','ec2:AuthorizeSecurityGroupIngress', 'ec2:RevokeSecurityGroupIngress', 'ec2:DeleteSecurityGroup'],
 
     run: function(cache, settings, callback) {
         var results = [];
@@ -67,16 +70,15 @@ module.exports = {
                             }
                         }
                     }
-
-                    if (!privateCidrsFound.length) {
-                        helpers.addResult(results, 0,
-                            'Security group "' + group.GroupName + '" is not configured to allow traffic from any reserved private addresses',
-                            region, resource);
-                    } else {
-                        helpers.addResult(results, 2,
-                            'Security group "' + group.GroupName + '" is configured to allow inbound access for these reserved private addresses: ' + privateCidrsFound.join(', '), 
-                            region, resource);
-                    }
+                }
+                if (!privateCidrsFound.length) {
+                    helpers.addResult(results, 0,
+                        'Security group "' + group.GroupName + '" is not configured to allow inbound access from any source IP address within any reserved private addresses',
+                        region, resource);
+                } else {
+                    helpers.addResult(results, 2,
+                        'Security group "' + group.GroupName + '" is configured to allow inbound access from any source IP address within these reserved private addresses: ' + privateCidrsFound.join(', '),
+                        region, resource);
                 }
             }
             rcb();

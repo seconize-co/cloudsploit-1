@@ -4,6 +4,8 @@ var helpers = require('../../../helpers/aws');
 module.exports = {
     title: 'ELB No Instances',
     category: 'ELB',
+    domain: 'Content Delivery',
+    severity: 'Medium',
     description: 'Detects ELBs that have no backend instances attached',
     more_info: 'All ELBs should have backend server resources. ' +
                'Those without any are consuming costs without providing ' +
@@ -23,7 +25,7 @@ module.exports = {
         remediate: ['elasticloadbalancing:DeleteLoadBalancer'],
         rollback: ['elasticloadbalancing:CreateLoadBalancer']
     },
-    realtime_triggers: [],
+    realtime_triggers: ['elasticloadbalancing:CreateLoadBalancer', 'elasticloadbalancing:DeleteLoadBalancer'],
 
     run: function(cache, settings, callback) {
         var results = [];
@@ -31,6 +33,7 @@ module.exports = {
         var regions = helpers.regions(settings);
 
         var acctRegion = helpers.defaultRegion(settings);
+        var awsOrGov = helpers.defaultPartition(settings);
         var accountId = helpers.addSource(cache, source, ['sts', 'getCallerIdentity', acctRegion, 'data']);
 
         async.each(regions.elb, function(region, rcb){
@@ -52,7 +55,7 @@ module.exports = {
 
             async.each(describeLoadBalancers.data, function(lb, cb){
                 // arn:aws:elasticloadbalancing:region:account-id:loadbalancer/name
-                var elbArn = 'arn:aws:elasticloadbalancing:' +
+                var elbArn = `arn:${awsOrGov}:elasticloadbalancing:` +
                               region + ':' + accountId + ':' +
                               'loadbalancer/' + lb.LoadBalancerName;
 

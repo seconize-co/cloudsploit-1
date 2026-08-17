@@ -4,6 +4,8 @@ var helpers = require('../../../helpers/aws');
 module.exports = {
     title: 'Access Keys Last Used',
     category: 'IAM',
+    domain: 'Identity and Access Management',
+    severity: 'Medium',
     description: 'Detects access keys that have not been used for a period of time and that should be decommissioned',
     more_info: 'Having numerous, unused access keys extends the attack surface. Access keys should be removed if they are no longer being used.',
     link: 'http://docs.aws.amazon.com/IAM/latest/UserGuide/ManagingCredentials.html',
@@ -19,13 +21,13 @@ module.exports = {
             name: 'Access Keys Last Used Fail',
             description: 'Return a failing result when access keys exceed this number of days without being used',
             regex: '^[1-9]{1}[0-9]{0,3}$',
-            default: 180
+            default: 45
         },
         access_keys_last_used_warn: {
             name: 'Access Keys Last Used Warn',
             description: 'Return a warning result when access keys exceed this number of days without being used',
             regex: '^[1-9]{1}[0-9]{0,3}$',
-            default: 90
+            default: 30
         }
     },
     asl: {
@@ -36,10 +38,11 @@ module.exports = {
                 property: 'access_key_1_last_used_date',
                 transform: 'DAYSFROM',
                 op: 'GT',
-                value: 90
+                value: 45
             }
         ]
     },
+    realtime_triggers: ['iam:CreateAccessKey','iam:DeleteAccessKey'],
 
     run: function(cache, settings, callback) {
         var config = {

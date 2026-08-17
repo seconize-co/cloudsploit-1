@@ -4,11 +4,13 @@ var helpers = require('../../../helpers/google');
 module.exports = {
     title: 'Database SSL Enabled',
     category: 'SQL',
+    domain: 'Databases',
+    severity: 'Medium',
     description: 'Ensures SQL databases have SSL enabled',
     more_info: 'Enabling SSL ensures that the sensitive data being transferred from the database is encrypted.',
     link: 'https://cloud.google.com/sql/docs/mysql/instance-settings',
     recommended_action: 'Ensure that SSL is enabled on all SQL databases.',
-    apis: ['instances:sql:list'],
+    apis: ['sql:list'],
     compliance: {
         pci: 'PCI requires strong cryptographic and security protocols ' +
              'when transmitting user data, this includes using SSL.',
@@ -16,20 +18,32 @@ module.exports = {
             'Database SSL should be used to ensure SQL databases ' +
             'are always connecting through secure encryption.',
     },
+    realtime_triggers:['cloudsql.instances.delete','cloudsql.instances.create','cloudsql.instances.update'],
 
     run: function(cache, settings, callback) {
         var results = [];
         var source = {};
         var regions = helpers.regions();
 
-        async.each(regions.instances.sql, function(region, rcb){
+        let projects = helpers.addSource(cache, source,
+            ['projects','get', 'global']);
+
+        if (!projects || projects.err || !projects.data) {
+            helpers.addResult(results, 3,
+                'Unable to query for projects: ' + helpers.addError(projects), 'global', null, null, projects.err);
+            return callback(null, results, source);
+        }
+
+        let project = projects.data[0].name;
+
+        async.each(regions.sql, function(region, rcb){
             let sqlInstances = helpers.addSource(cache, source,
-                ['instances', 'sql', 'list', region]);
+                ['sql', 'list', region]);
 
             if (!sqlInstances) return rcb();
 
             if (sqlInstances.err || !sqlInstances.data) {
-                helpers.addResult(results, 3, 'Unable to query SQL instances: ' + helpers.addError(sqlInstances), region);
+                helpers.addResult(results, 3, 'Unable to query SQL instances: ' + helpers.addError(sqlInstances), region, null, null, sqlInstances.err);
                 return rcb();
             }
 
@@ -39,14 +53,18 @@ module.exports = {
             }
 
             sqlInstances.data.forEach(sqlInstance => {
+                if (sqlInstance.instanceType && sqlInstance.instanceType.toUpperCase() === 'READ_REPLICA_INSTANCE') return;
+
+                let resource = helpers.createResourceName('instances', sqlInstance.name, project);
+
                 if (sqlInstance.settings &&
                     sqlInstance.settings.ipConfiguration &&
                     sqlInstance.settings.ipConfiguration.requireSsl) {
                     helpers.addResult(results, 0,
-                        'SQL database has SSL enabled', region, sqlInstance.name);
+                        'SQL database has SSL enabled', region, resource);
                 } else {
                     helpers.addResult(results, 2,
-                        'SQL database has SSL disabled', region, sqlInstance.name);
+                        'SQL database has SSL disabled', region, resource);
                 }
             });
 

@@ -109,24 +109,35 @@ const masterRoleActions = {
 module.exports = {
     title: 'IAM Master and IAM Manager Roles',
     category: 'IAM',
+    domain: 'Identity and Access Management',
+    severity: 'High',
     description: 'Ensure IAM Master and IAM Manager roles are active within your AWS account.',
     more_info: 'IAM roles should be split into IAM Master and IAM Manager roles to work in two-person rule manner for best prectices.',
     link: 'https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html',
     recommended_action: 'Create the IAM Master and IAM Manager roles for an efficient IAM administration and permission management within your AWS account',
-    apis: ['IAM:listRoles', 'IAM:listRolePolicies', 'IAM:getRolePolicy'],
+    apis: ['IAM:listRoles', 'IAM:listRolePolicies', 'IAM:getRolePolicy', 'IAM:getRole'],
     settings: {
         iam_role_policies_ignore_path: {
             name: 'IAM Role Policies Ignore Path',
             description: 'Ignores roles that contain the provided exact-match path',
             regex: '^[0-9A-Za-z/._-]{3,512}$',
             default: false
+        },
+        iam_role_policies_ignore_tag: {
+            name: 'IAM Role Policies Ignore Tag',
+            description: 'Ignores roles that contain the provided tag. Give key-value pair i.e. env:Finance',
+            regex: '^.*$',
+            default: ''
         }
     },
-    
+    realtime_triggers: ['iam:CreateRole','iam:DeleteRole'],
+
     run: function(cache, settings, callback) {
         var config = {
-            iam_role_policies_ignore_path: settings.iam_role_policies_ignore_path || this.settings.iam_role_policies_ignore_path.default
+            iam_role_policies_ignore_path: settings.iam_role_policies_ignore_path || this.settings.iam_role_policies_ignore_path.default,
+            iam_role_policies_ignore_tag: settings.iam_role_policies_ignore_tag || this.settings.iam_role_policies_ignore_tag.default
         };
+        
         var results = [];
         var source = {};
 
@@ -162,6 +173,28 @@ module.exports = {
                 return cb();
             }
 
+            // Get role details
+            var getRole = helpers.addSource(cache, source,
+                ['iam', 'getRole', region, role.RoleName]);
+                
+            if (!getRole || getRole.err || !getRole.data || !getRole.data.Role) {
+                helpers.addResult(results, 3,
+                    'Unable to query for IAM roles details: ' + role.RoleName + ': ' + helpers.addError(getRole), 'global', role.Arn);
+                return cb();
+            }
+
+            //Skip roles with user defined tags
+            if (config.iam_role_policies_ignore_tag && config.iam_role_policies_ignore_tag.length) {
+                if (config.iam_role_policies_ignore_tag.split(':').length == 2){
+                    var key = config.iam_role_policies_ignore_tag.split(':')[0].trim();
+                    var value= new RegExp(config.iam_role_policies_ignore_tag.split(':')[1].trim());
+                    if (getRole.data.Role.Tags && getRole.data.Role.Tags.length){
+                        if (getRole.data.Role.Tags.find(tag =>
+                            tag.Key == key && value.test(tag.Value))) return cb();
+                    }
+                }
+            }
+
             // Get inline policies attached to role
             var listRolePolicies = helpers.addSource(cache, source,
                 ['iam', 'listRolePolicies', region, role.RoleName]);
@@ -169,7 +202,7 @@ module.exports = {
             var getRolePolicy = helpers.addSource(cache, source,
                 ['iam', 'getRolePolicy', region, role.RoleName]);
 
-            if (listRolePolicies.err || !listRolePolicies.data || !listRolePolicies.data.PolicyNames) {
+            if (!listRolePolicies || listRolePolicies.err || !listRolePolicies.data || !listRolePolicies.data.PolicyNames) {
                 helpers.addResult(results, 3,
                     'Unable to query for IAM role policy for role: ' + role.RoleName + ': ' + helpers.addError(listRolePolicies), 'global', role.Arn);
                 return cb();
@@ -207,8 +240,7 @@ module.exports = {
                     getRolePolicy[policyName].data &&
                     getRolePolicy[policyName].data.PolicyDocument) {
 
-                    var statements = helpers.normalizePolicyDocument(
-                        getRolePolicy[policyName].data.PolicyDocument);
+                    var statements = getRolePolicy[policyName].data.PolicyDocument;
                     if (!statements) break;
 
                     for (var s in statements) {

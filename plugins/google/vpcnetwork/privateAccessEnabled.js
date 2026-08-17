@@ -4,6 +4,8 @@ var helpers = require('../../../helpers/google');
 module.exports = {
     title: 'Private Access Enabled',
     category: 'VPC Network',
+    domain: 'Network Access Control',
+    severity: 'Medium',
     description: 'Ensures Private Google Access is enabled for all Subnets',
     more_info: 'Private Google Access allows VM instances on a subnet to reach Google APIs and services without an IP address. This creates a more secure network for the internal communication.',
     link: 'https://cloud.google.com/vpc/docs/configure-private-google-access',
@@ -14,11 +16,23 @@ module.exports = {
             'any required service. This includes using secured technologies ' +
             'such as Private Google Access.'
     },
+    realtime_triggers: ['compute.subnetworks.insert','compute.subnetworks.delete', 'compute.subnetworks.setPrivateIpGoogleAccess'],
 
     run: function(cache, settings, callback) {
         var results = [];
         var source = {};
         var regions = helpers.regions();
+
+        let projects = helpers.addSource(cache, source,
+            ['projects','get', 'global']);
+
+        if (!projects || projects.err || !projects.data || !projects.data.length) {
+            helpers.addResult(results, 3,
+                'Unable to query for projects: ' + helpers.addError(projects), 'global', null, null, (projects) ? projects.err : null);
+            return callback(null, results, source);
+        }
+
+        var project = projects.data[0].name;
 
         async.each(regions.subnetworks, function(region, rcb){
             let subnetworks = helpers.addSource(
@@ -27,7 +41,7 @@ module.exports = {
             if (!subnetworks) return rcb();
 
             if (subnetworks.err || !subnetworks.data) {
-                helpers.addResult(results, 3, 'Unable to query subnetworks: ' + helpers.addError(subnetworks), region);
+                helpers.addResult(results, 3, 'Unable to query subnetworks: ' + helpers.addError(subnetworks), region, null, null, subnetworks.err);
                 return rcb();
             }
 
@@ -36,24 +50,22 @@ module.exports = {
                 return rcb();
             }
 
-            var badSubnets = [];
-            var regionSubnets = false;
+            let found = false;
             subnetworks.data.forEach(subnet => {
+                let resource = helpers.createResourceName('subnetworks', subnet.name, project, 'region', region);
+
                 if (subnet.creationTimestamp &&
                     !subnet.privateIpGoogleAccess) {
-                    badSubnets.push(subnet.id);
+                    found = true;
+                    helpers.addResult(results, 2,
+                        'Subnet does not have Private Google Access Enabled', region, resource);
                 } else if (subnet.creationTimestamp) {
-                    regionSubnets = true;
+                    found = true;
+                    helpers.addResult(results, 0, 'Subnet has Private Google Access Enabled', region, resource);
                 }
             });
 
-            if (badSubnets.length) {
-                var badSubnetStr = badSubnets.join(', ');
-                helpers.addResult(results, 2,
-                    `The following Subnets do not have Private Google Access Enabled: ${badSubnetStr}`, region);
-            } else if (regionSubnets){
-                helpers.addResult(results, 0, 'All Subnets in the Region have Private Google Access Enabled', region);
-            } else {
+            if (!found) {
                 helpers.addResult(results, 0, 'No subnetworks present', region);
             }
 

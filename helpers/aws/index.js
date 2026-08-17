@@ -1,16 +1,20 @@
 var shared = require(__dirname + '/../shared.js');
 var functions = require('./functions.js');
+var api = require('./api.js');
+var api_multipart = require('./api_multipart.js');
 var regRegions = require('./regions.js');
 var govRegions = require('./regions_gov.js');
+var govRegionsFedRampEast1  = require('./regions_gov_fedramp_east_1.js');
+var govRegionsFedRampWest1  = require('./regions_gov_fedramp_west_1.js');
 var chinaRegions = require('./regions_china.js');
 
 // Services that operate on a single, account-wide API endpoint rather than
-// per-region ones. Mirrors the globalServices list in
-// collectors/aws/collector.js: the collector always gathers their data in
-// this one region regardless of --region, so their region list here must
-// never be filtered down or plugins would stop finding data the collector
-// did fetch.
-var GLOBAL_SERVICE_KEYS = ['s3', 'iam', 'cloudfront', 'route53', 'route53domains'];
+// per-region ones. Derived from api.js's globalServices (the same list the
+// collector itself uses to exempt regions from skip_regions/--region
+// filtering) so this can never drift out of sync with it - if it did,
+// --region would filter a global service's region list down to nothing here
+// while the collector still expects to find its (unfiltered) data.
+var GLOBAL_SERVICE_KEYS = api.globalServices.map(function(s) { return s.toLowerCase(); });
 
 // Keys in the regions.js maps that aren't a specific AWS service's region
 // list (an overall region catalog, a single-region default, and the set of
@@ -18,7 +22,12 @@ var GLOBAL_SERVICE_KEYS = ['s3', 'iam', 'cloudfront', 'route53', 'route53domains
 var NON_SERVICE_KEYS = ['all', 'default', 'optin'];
 
 var regions = function(settings) {
-    var base = settings.govcloud ? govRegions : settings.china ? chinaRegions : regRegions;
+    var base;
+    if (settings.govcloud && settings.is_fedramp_type_high && settings.LAMBDA_REGION == 'us-gov-east-1') base = govRegionsFedRampEast1;
+    else if (settings.govcloud && settings.is_fedramp_type_high && settings.LAMBDA_REGION == 'us-gov-west-1') base = govRegionsFedRampWest1;
+    else if (settings.govcloud) base = govRegions;
+    else if (settings.china) base = chinaRegions;
+    else base = regRegions;
 
     // settings.region is only a parsed array once index.js has validated it;
     // during that validation call it's still the raw comma-separated string,
@@ -61,5 +70,7 @@ var helpers = {
 
 for (var s in shared) helpers[s] = shared[s];
 for (var f in functions) helpers[f] = functions[f];
+for (var a in api) helpers[a] = api[a];
+for (var am in api_multipart) helpers[am] = api_multipart[am];
 
 module.exports = helpers;

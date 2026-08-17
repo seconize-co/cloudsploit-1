@@ -4,11 +4,14 @@ var helpers = require('../../../helpers/google');
 module.exports = {
     title: 'Service Account Managed Keys',
     category: 'IAM',
+    domain: 'Identity and Access Management',
+    severity: 'Medium',
     description: 'Ensures that service account keys are being managed by Google.',
     more_info: 'Service account keys should be managed by Google to ensure that they are as secure as possible, including key rotations and restrictions to the accessibility of the keys.',
     link: 'https://cloud.google.com/iam/docs/creating-managing-service-account-keys',
     recommended_action: 'Ensure all user service account keys are being managed by Google.',
     apis: ['serviceAccounts:list','keys:list'],
+    realtime_triggers: ['iam.admin.CreateServiceAccountKey', 'iam.admin.CreateServiceAccount','iam.admin.DeleteServiceAccountKey', 'iam.admin.DeleteServiceAccount'],
 
     run: function(cache, settings, callback) {
         var results = [];
@@ -22,7 +25,7 @@ module.exports = {
             if (!keys) return rcb();
 
             if (keys.err || !keys.data) {
-                helpers.addResult(results, 3, 'Unable to query service account keys, check permissions.', region);
+                helpers.addResult(results, 3, 'Unable to query service account keys, check permissions.', region, null, null, keys.err);
                 return rcb();
             }
 

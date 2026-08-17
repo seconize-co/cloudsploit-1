@@ -4,10 +4,12 @@ const helpers = require('../../../helpers/azure');
 module.exports = {
     title: '.NET Framework Version',
     category: 'App Service',
+    domain: 'Application Integration',
+    severity: 'Low',
     description: 'Ensures the latest version of the .NET Framework is installed for all App Services.',
     more_info: 'Installing the latest version of the .NET framework will reduce the security risk of missing security patches.',
     recommended_action: 'Select the latest version of the .NET framework for all .NET-based App Services',
-    link: 'https://docs.microsoft.com/en-us/azure/app-service/web-sites-configure',
+    link: 'https://learn.microsoft.com/en-us/azure/app-service/web-sites-configure',
     apis: ['webApps:list', 'webApps:listConfigurations'],
     settings: {
         latestNetFrameworkVersion: {
@@ -17,6 +19,8 @@ module.exports = {
             regex: '[0-9.]{2,5}'
         }
     },
+    realtime_triggers: ['microsoftweb:sites:write','microsoftweb:sites:delete'],
+
     run: function(cache, settings, callback) {
         const config = {
             latestNetFrameworkVersion: settings.latestNetFrameworkVersion || this.settings.latestNetFrameworkVersion.default
