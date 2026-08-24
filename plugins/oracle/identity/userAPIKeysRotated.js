@@ -19,14 +19,14 @@ module.exports = {
         }
     },
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
         var region = helpers.objectFirstKey(cache['regionSubscription']['list']);
 
         var config = {
             api_keys_rotated_fail: parseInt(settings.api_keys_rotated_fail || this.settings.api_keys_rotated_fail.default)
-        }
+        };
 
         var users = helpers.addSource(cache, source,
             ['user', 'list', region]);

@@ -3,8 +3,10 @@ const accessKeysLastUsed = require('./accessKeysLastUsed');
 
 var warnDate = new Date();
 warnDate.setMonth(warnDate.getMonth() - 4);
+// Day-based offset (not setMonth) so this stays well under the 30-day warn
+// threshold regardless of calendar month length (28-31 days).
 var passDate = new Date();
-passDate.setMonth(passDate.getMonth() - 1);
+passDate.setDate(passDate.getDate() - 10);
 var failDate = new Date();
 failDate.setMonth(failDate.getMonth() - 7);
 

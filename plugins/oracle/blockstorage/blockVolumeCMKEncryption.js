@@ -21,7 +21,7 @@ module.exports = {
         }
     },
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
         var regions = helpers.regions(settings.govcloud);
@@ -31,18 +31,18 @@ module.exports = {
         var desiredEncryptionLevel = helpers.PROTECTION_LEVELS.indexOf(desiredEncryptionLevelStr);
 
         async.series([
-            function (cb) {
-                async.each(regions.keys, function (region, rcb) {
+            function(cb) {
+                async.each(regions.keys, function(region, rcb) {
                     let keys = helpers.addSource(
                         cache, source, ['keys', 'list', region]);
                     if (keys && keys.data && keys.data.length) helpers.listToObj(keysObj, keys.data, 'id');
                     rcb();
-                }, function () {
+                }, function() {
                     cb();
                 });
             },
-            function (cb) {
-                async.each(regions.volume, function (region, rcb) {
+            function(cb) {
+                async.each(regions.volume, function(region, rcb) {
 
                     if (helpers.checkRegionSubscription(cache, source, results, region)) {
 
@@ -84,13 +84,13 @@ module.exports = {
                     }
 
                     rcb();
-                }, function () {
+                }, function() {
                     cb();
                 });
             }
-        ], function () {
+        ], function() {
             // Global checking goes here
             callback(null, results, source);
         });
     }
-}
+};

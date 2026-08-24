@@ -12,12 +12,12 @@ module.exports = {
     recommended_action: 'Add ingress rules to all security lists.',
     apis: ['vcn:list', 'securityList:list'],
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
         var regions = helpers.regions(settings.govcloud);
 
-        async.each(regions.securityList, function (region, rcb) {
+        async.each(regions.securityList, function(region, rcb) {
 
             if (helpers.checkRegionSubscription(cache, source, results, region)) {
                 var securityLists = helpers.addSource(cache, source,
@@ -36,11 +36,10 @@ module.exports = {
                 securityLists.data.forEach(securityList => {
                     if (securityList.ingressSecurityRules && securityList.ingressSecurityRules.length) {
                         helpers.addResult(results, 0,
-                            `Security list has ingress rules configured`, region, securityList.id);
-                    }
-                    else {
+                            'Security list has ingress rules configured', region, securityList.id);
+                    } else {
                         helpers.addResult(results, 2,
-                            `Security list does not have ingress rules configured`, region, securityList.id);
+                            'Security list does not have ingress rules configured', region, securityList.id);
                     }
 
 
@@ -49,7 +48,7 @@ module.exports = {
 
             }
             rcb();
-        }, function () {
+        }, function() {
             // Global checking goes here
             callback(null, results, source);
         });

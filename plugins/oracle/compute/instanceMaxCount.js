@@ -180,12 +180,6 @@ module.exports = {
             regex: '^[0-9]{1,4}$',
             default: 50
         },
-        instance_count_region_threshold_eu_amsterdam_1: {
-            name: 'Instance Count Region Threshold: eu-amsterdam-1',
-            description: 'Checks for the number of running instances in the eu-amsterdam-1 region and triggers a failing result if it exceeds the specified count',
-            regex: '^[0-9]{1,4}$',
-            default: 50
-        },
         instance_count_region_threshold_af_johannesburg_1: {
             name: 'Instance Count Region Threshold: af-johannesburg-1',
             description: 'Checks for the number of running instances in the af-johannesburg-1 region and triggers a failing result if it exceeds the specified count',

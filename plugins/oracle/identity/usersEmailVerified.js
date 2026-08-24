@@ -12,7 +12,7 @@ module.exports = {
     recommended_action: 'Modify IAM users to add their email addresses',
     apis: ['user:list'],
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
 

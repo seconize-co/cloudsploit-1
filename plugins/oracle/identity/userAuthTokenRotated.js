@@ -19,14 +19,14 @@ module.exports = {
         }
     },
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
         var region = helpers.objectFirstKey(cache['regionSubscription']['list']);
 
         var config = {
             auth_tokens_rotated_fail: parseInt(settings.auth_tokens_rotated_fail || this.settings.auth_tokens_rotated_fail.default)
-        }
+        };
 
         var users = helpers.addSource(cache, source,
             ['user', 'list', region]);

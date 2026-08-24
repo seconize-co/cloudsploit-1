@@ -12,7 +12,7 @@ module.exports = {
     recommended_action: 'Remove API keys for administrator users',
     apis: ['user:list', 'apiKey:list', 'group:list', 'userGroupMembership:list', 'authToken:list'],
 
-    run: function (cache, settings, callback) {
+    run: function(cache, settings, callback) {
         var results = [];
         var source = {};
 
