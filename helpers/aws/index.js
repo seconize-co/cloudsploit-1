@@ -21,6 +21,12 @@ var GLOBAL_SERVICE_KEYS = api.globalServices.map(function(s) { return s.toLowerC
 // opt-in-only regions) - never filtered by --region.
 var NON_SERVICE_KEYS = ['all', 'default', 'optin'];
 
+// STS is only collected in the default region, and plugins read the account id from
+// sts:getCallerIdentity there to build resource ARNs. Filtering it by --region would leave
+// "null" as the account id whenever the default region is not selected, giving the same
+// resources different ARNs depending on the selected regions.
+var ALWAYS_COLLECTED_KEYS = ['sts'];
+
 var regions = function(settings) {
     var base;
     if (settings.govcloud && settings.is_fedramp_type_high && settings.LAMBDA_REGION == 'us-gov-east-1') base = govRegionsFedRampEast1;
@@ -37,7 +43,7 @@ var regions = function(settings) {
 
     var filtered = {};
     Object.keys(base).forEach(function(key) {
-        if (NON_SERVICE_KEYS.indexOf(key) !== -1 || GLOBAL_SERVICE_KEYS.indexOf(key) !== -1) {
+        if (NON_SERVICE_KEYS.indexOf(key) !== -1 || GLOBAL_SERVICE_KEYS.indexOf(key) !== -1 || ALWAYS_COLLECTED_KEYS.indexOf(key) !== -1) {
             filtered[key] = base[key];
         } else {
             filtered[key] = base[key].filter(function(r) { return settings.region.indexOf(r) !== -1; });
