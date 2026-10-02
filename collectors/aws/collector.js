@@ -139,10 +139,13 @@ var collect = function(AWSConfig, settings, callback) {
                         helpers.globalServices.indexOf(serviceName) === -1) return regionCb();
 
                     // --region: limit execution to the selected regions only.
-                    // Global services (S3, IAM, etc.) are exempt, same as skip_regions above.
+                    // Global services (S3, IAM, etc.) are exempt, same as skip_regions above, and so is
+                    // STS: plugins read the account id for resource ARNs from sts:getCallerIdentity in the
+                    // default region (see ALWAYS_COLLECTED_KEYS in helpers/aws/index.js).
                     if (settings.region && settings.region.length &&
                         settings.region.indexOf(region) === -1 &&
-                        helpers.globalServices.indexOf(serviceName) === -1) return regionCb();
+                        helpers.globalServices.indexOf(serviceName) === -1 &&
+                        serviceName !== 'STS') return regionCb();
 
                     if (excludeRegions &&
                         excludeRegions.filter(excluded=> {
