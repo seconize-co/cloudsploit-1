@@ -16,6 +16,7 @@ module.exports = {
     run: function(cache, settings, callback) {
         var results = [];
         var source = {};
+        // Route53 is a global service: data is collected in the default region, results are labelled 'global'.
         var region = helpers.defaultRegion(settings);
         var awsOrGov = helpers.defaultPartition(settings);
         var listHostedZones = helpers.addSource(cache, source,
@@ -26,13 +27,13 @@ module.exports = {
         if (listHostedZones.err || !listHostedZones.data) {
             helpers.addResult(results, 3,
                 `Unable to query for hosted zones: ${helpers.addError(listHostedZones)}`,
-                region);
+                'global');
             return callback(null, results, source);
         }
 
         
         if (!listHostedZones.data.length) {
-            helpers.addResult(results, 0, 'No Route53 Hosted Zones found', region);
+            helpers.addResult(results, 0, 'No Route53 Hosted Zones found', 'global');
             return callback(null, results, source);
         }
 
@@ -47,14 +48,14 @@ module.exports = {
             if (!listResourceRecordSets || listResourceRecordSets.err || !listResourceRecordSets.data) {
                 helpers.addResult(results, 3,
                     `Unable to query for resource record sets: ${helpers.addError(listResourceRecordSets)}`,
-                    region, resource);
+                    'global', resource);
                 return cb();
             }
 
             if (!listResourceRecordSets.data.ResourceRecordSets || !listResourceRecordSets.data.ResourceRecordSets.length) {
                 helpers.addResult(results, 0,
                     'No resource record sets found',
-                    region, resource);
+                    'global', resource);
                 return cb();
             }
 
@@ -65,11 +66,11 @@ module.exports = {
             if (!enabled) {
                 helpers.addResult(results, 2,
                     'Hosted Zone has does not have SPF enabled',
-                    region, resource);
+                    'global', resource);
             } else {
                 helpers.addResult(results, 0,
                     'Hosted Zone has SPF enabled',
-                    region, resource);
+                    'global', resource);
             }
 
             cb();

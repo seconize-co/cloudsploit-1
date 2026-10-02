@@ -53,7 +53,8 @@ module.exports = {
             }
 
             async.each(describeTrails.data, function(trail, cb){
-                if (!trail.TrailARN || (trail.S3BucketName && trail.S3BucketName == helpers.CLOUDSPLOIT_EVENTS_BUCKET)) return cb();
+                if (!trail.TrailARN || (trail.HomeRegion && trail.HomeRegion.toLowerCase() !== region) ||
+                    (trail.S3BucketName && trail.S3BucketName == helpers.CLOUDSPLOIT_EVENTS_BUCKET)) return cb();
 
                 var resource = trail.TrailARN;
 
