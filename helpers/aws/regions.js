@@ -33,12 +33,13 @@ var newRegionsUpdate =[
     'eu-central-2',    // Europe (Zurich)
     'il-central-1',   //Israel (Tel Aviv)
     'ca-west-1',      //Canada West (Calgary)
+    'ap-southeast-5', // Asia Pacific (Malaysia)
 ];
 
 module.exports = {
     default: ['us-east-1'],
     all: [...regions, ...newRegionsUpdate],
-    optin: ['ap-east-1', 'me-south-1', 'ap-southeast-3'],   // Regions that AWS disables by default
+    optin: ['ap-east-1', 'me-south-1', 'ap-southeast-3', 'ap-southeast-5'],   // Regions that AWS disables by default
     accessanalyzer: [...regions, ...newRegionsUpdate],
     acm: [...regions, ...newRegionsUpdate],
     apigateway: [...regions, ...newRegionsUpdate],

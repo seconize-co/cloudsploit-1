@@ -37,7 +37,7 @@ module.exports = {
             }
 
             async.each(describeTrails.data, function(trail, cb){
-                if (!trail.TrailARN) return cb();
+                if (!trail.TrailARN || (trail.HomeRegion && trail.HomeRegion.toLowerCase() !== region)) return cb();
 
                 var resource = trail.TrailARN;
                 

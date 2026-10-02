@@ -15,6 +15,7 @@ module.exports = {
     run: function(cache, settings, callback) {
         var results = [];
         var source = {};
+        // Route53 is a global service: data is collected in the default region, results are labelled 'global'.
         var region = helpers.defaultRegion(settings);
         
         var listHostedZones = helpers.addSource(cache, source,
@@ -25,14 +26,14 @@ module.exports = {
         if (listHostedZones.err || !listHostedZones.data) {
             helpers.addResult(results, 3,
                 `Unable to query for hosted zones: ${helpers.addError(listHostedZones)}`,
-                region);
+                'global');
             return callback(null, results, source);
         }
 
         if (!listHostedZones.data.length) {
-            helpers.addResult(results, 2, 'Route53 DNS service is not in use', region);
+            helpers.addResult(results, 2, 'Route53 DNS service is not in use', 'global');
         } else {
-            helpers.addResult(results, 0, 'Route53 DNS service is in use', region);
+            helpers.addResult(results, 0, 'Route53 DNS service is in use', 'global');
         }
 
         return callback(null, results, source);
