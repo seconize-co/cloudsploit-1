@@ -52,7 +52,7 @@ module.exports = {
             describeSnapshots.data.forEach(snapshot => {
                 if (!snapshot.SnapshotId) return;
 
-                var resource = `arn:${awsOrGov}:${region}:${snapshot.OwnerId}:snapshot/${snapshot.SnapshotId}`;
+                var resource = `arn:${awsOrGov}:ec2:${region}:${snapshot.OwnerId}:snapshot/${snapshot.SnapshotId}`;
                 var snapshotTime = new Date(snapshot.StartTime);
                 var difference = Math.floor((today -snapshotTime) / (1000 * 60 * 60 * 24));
 

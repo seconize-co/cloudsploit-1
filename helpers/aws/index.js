@@ -21,11 +21,16 @@ var GLOBAL_SERVICE_KEYS = api.globalServices.map(function(s) { return s.toLowerC
 // opt-in-only regions) - never filtered by --region.
 var NON_SERVICE_KEYS = ['all', 'default', 'optin'];
 
-// STS is only collected in the default region, and plugins read the account id from
-// sts:getCallerIdentity there to build resource ARNs. Filtering it by --region would leave
-// "null" as the account id whenever the default region is not selected, giving the same
-// resources different ARNs depending on the selected regions.
-var ALWAYS_COLLECTED_KEYS = ['sts'];
+// Account-level services collected only in the default region (us-east-1), never filtered by --region:
+// - sts: plugins read the account id from sts:getCallerIdentity there to build resource ARNs. Filtering
+//   it would leave "null" as the account id whenever the default region is not selected, giving the
+//   same resources different ARNs depending on the selected regions.
+// - shield, organizations: account-wide settings reported as 'global'. Filtering them would drop those
+//   checks from every scan that does not select us-east-1.
+var ALWAYS_COLLECTED_KEYS = ['sts', 'shield', 'organizations'];
+
+// Collector service names of ALWAYS_COLLECTED_KEYS (helpers/aws/api.js).
+var ALWAYS_COLLECTED_SERVICES = ['STS', 'Shield', 'Organizations'];
 
 var regions = function(settings) {
     var base;
@@ -54,6 +59,7 @@ var regions = function(settings) {
 
 var helpers = {
     regions: regions,
+    alwaysCollectedServices: ALWAYS_COLLECTED_SERVICES,
     MAX_REGIONS_AT_A_TIME: 20,
     CLOUDSPLOIT_EVENTS_BUCKET: 'cloudsploit-engine-trails',
     CLOUDSPLOIT_EVENTS_SNS: 'aqua-cspm-sns-',

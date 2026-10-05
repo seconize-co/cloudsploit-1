@@ -26,4 +26,16 @@ describe('helpers.regions - region selection', function() {
         expect(r.sts).to.deep.equal(['us-east-1']);
         expect(r.sts).to.include(helpers.defaultRegion({}));
     });
+
+    it('keeps account-level Shield and Organizations in the default region even when it is not selected', function() {
+        var r = helpers.regions({ region: ['ap-south-1'] });
+        expect(r.shield).to.deep.equal(['us-east-1']);
+        expect(r.organizations).to.deep.equal(['us-east-1']);
+    });
+
+    it('exempts the collector service names of the always-collected services', function() {
+        expect(helpers.alwaysCollectedServices).to.include.members(['STS', 'Shield', 'Organizations']);
+        var api = require('./api');
+        helpers.alwaysCollectedServices.forEach(function(s) { expect(api.calls).to.have.property(s); });
+    });
 });
