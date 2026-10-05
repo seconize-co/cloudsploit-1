@@ -38,6 +38,8 @@ module.exports = {
             } else if (describeTrails.data[0]) {
                 for (var t in describeTrails.data) {
                     if (describeTrails.data[t].S3BucketName == helpers.CLOUDSPLOIT_EVENTS_BUCKET) continue;
+                    // Shadow copy of a trail from another region: reported in its home region
+                    if (describeTrails.data[t].HomeRegion && describeTrails.data[t].HomeRegion.toLowerCase() !== region) continue;
                     if (!describeTrails.data[t].CloudWatchLogsLogGroupArn) {
                         helpers.addResult(results, 2, 'CloudTrail CloudWatch integration is not enabled',
                             region, describeTrails.data[t].TrailARN);

@@ -10,7 +10,7 @@ module.exports = {
     more_info: 'Monitoring AWS CodeBuild projects helps maintaining the reliability, availability, and performance of the resource. It helps to easily debug multi-point failure and potential incidents.',
     recommended_action: 'Ensure that CodeBuild project has logging enabled.',
     link: 'https://docs.aws.amazon.com/codebuild/latest/userguide/monitoring-builds.html',
-    apis: ['CodeBuild:listProjects', 'CodeBuild:batchGetProjects', 'STS:GetCallerIdentity'],
+    apis: ['CodeBuild:listProjects', 'CodeBuild:batchGetProjects', 'STS:getCallerIdentity'],
     realtime_triggers: ['codebuild:CreateProject', 'codebuild:UpdateProject', 'codebuild:DeleteProject'],
 
     run: function(cache, settings, callback) {
@@ -20,7 +20,7 @@ module.exports = {
 
         var acctRegion = helpers.defaultRegion(settings);
         var awsOrGov = helpers.defaultPartition(settings);
-        var accountId = helpers.addSource(cache, source, ['STS', 'GetCallerIdentity', acctRegion, 'data']);
+        var accountId = helpers.addSource(cache, source, ['sts', 'getCallerIdentity', acctRegion, 'data']);
 
         async.each(regions.codebuild, function(region, rcb) {
             var listProjects =helpers.addSource(cache, source,

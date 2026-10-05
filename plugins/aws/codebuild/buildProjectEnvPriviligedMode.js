@@ -10,7 +10,7 @@ module.exports = {
     more_info: 'Enabling privileged mode for CodeBuild project environments allows the build container to have elevated permissions on the host machine, which can potentially lead to security vulnerabilities and unauthorized access.',
     recommended_action: 'Modify CodeBuild build project and disable environment privileged mode.',
     link: 'https://docs.aws.amazon.com/codebuild/latest/userguide/change-project-console.html',
-    apis: ['CodeBuild:listProjects', 'CodeBuild:batchGetProjects','STS:GetCallerIdentity'],
+    apis: ['CodeBuild:listProjects', 'CodeBuild:batchGetProjects','STS:getCallerIdentity'],
     realtime_triggers: ['codebuild:CreateProject', 'codebuild:UpdateProject','codebuild:DeleteProject'],
 
     run: function(cache, settings, callback) {
@@ -20,7 +20,7 @@ module.exports = {
 
         var acctRegion = helpers.defaultRegion(settings);
         var awsOrGov = helpers.defaultPartition(settings);
-        var accountId = helpers.addSource(cache, source, ['STS', 'GetCallerIdentity', acctRegion, 'data']);
+        var accountId = helpers.addSource(cache, source, ['sts', 'getCallerIdentity', acctRegion, 'data']);
 
         async.each(regions.codebuild, function(region, rcb){
             var listProjects = helpers.addSource(cache, source,
