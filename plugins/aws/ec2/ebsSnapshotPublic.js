@@ -40,7 +40,7 @@ module.exports = {
             describeSnapshots.data.forEach(snapshot => {
                 if (!snapshot.SnapshotId) return;
 
-                var resource = `arn:${awsOrGov}:${region}:${snapshot.OwnerId}:snapshot/${snapshot.SnapshotId}`;
+                var resource = `arn:${awsOrGov}:ec2:${region}:${snapshot.OwnerId}:snapshot/${snapshot.SnapshotId}`;
 
                 var describeSnapshotAttribute = helpers.addSource(cache, source,
                     ['ec2', 'describeSnapshotAttribute', region, snapshot.SnapshotId]);

@@ -139,10 +139,13 @@ var collect = function(AWSConfig, settings, callback) {
                         helpers.globalServices.indexOf(serviceName) === -1) return regionCb();
 
                     // --region: limit execution to the selected regions only.
-                    // Global services (S3, IAM, etc.) are exempt, same as skip_regions above.
+                    // Global services (S3, IAM, etc.) are exempt, same as skip_regions above, and so are the
+                    // account-level services collected only in the default region (STS for the account id in
+                    // ARNs, Shield, Organizations - see ALWAYS_COLLECTED_KEYS in helpers/aws/index.js).
                     if (settings.region && settings.region.length &&
                         settings.region.indexOf(region) === -1 &&
-                        helpers.globalServices.indexOf(serviceName) === -1) return regionCb();
+                        helpers.globalServices.indexOf(serviceName) === -1 &&
+                        helpers.alwaysCollectedServices.indexOf(serviceName) === -1) return regionCb();
 
                     if (excludeRegions &&
                         excludeRegions.filter(excluded=> {

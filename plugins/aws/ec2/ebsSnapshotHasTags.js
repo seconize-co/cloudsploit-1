@@ -38,7 +38,7 @@ module.exports = {
             for (let snapshot of describeSnapshots.data){
                 if (!snapshot.OwnerId || !snapshot.SnapshotId) continue;
 
-                var resourceARN = `arn:${awsOrGov}:${region}:${snapshot.OwnerId}:snapshot/${snapshot.SnapshotId}`;
+                var resourceARN = `arn:${awsOrGov}:ec2:${region}:${snapshot.OwnerId}:snapshot/${snapshot.SnapshotId}`;
 
                 if (!snapshot.Tags || !snapshot.Tags.length) {
                     helpers.addResult(results, 2, 'EBS Snapshot does not have tags', region, resourceARN);
