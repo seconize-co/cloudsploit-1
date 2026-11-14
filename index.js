@@ -78,7 +78,8 @@ parser.add_argument('--remediate', {
 });
 parser.add_argument('--cloud', {
     help: 'The name of cloud to run plugins for. If not provided, logic will assume cloud from config.js file based on provided credentials',
-    choices: ['aws', 'azure', 'github', 'google', 'oracle','alibaba'],
+    // Seconize supports AWS, Azure, GCP (google) and OCI (oracle) only.
+    choices: ['aws', 'azure', 'google', 'oracle'],
     action: 'append'
 });
 parser.add_argument('--run-asl', {
@@ -89,7 +90,11 @@ parser.add_argument('--run-asl', {
 let settings = parser.parse_args();
 let cloudConfig = {};
 
-settings.cloud = 'aws';
+// --cloud is optional and repeatable (action: 'append'), so keep only the first value. When it is
+// not given, the credential chain below picks the cloud from the credentials in config.js.
+// Do not default this to 'aws': every credential check below requires settings.cloud to be unset
+// or to match, so a forced 'aws' sent Azure and GCP configs past their own branches.
+settings.cloud = Array.isArray(settings.cloud) ? settings.cloud[0] : (settings.cloud || null);
 
 // AWS only. Parse "--region us-east-1,us-west-2" into a deduped, validated
 // array. Left undefined (the collector's current default behavior) when the
@@ -146,6 +151,14 @@ try {
     console.error(e);
     process.exit(1);
 }
+
+// A config.js usually lists only the clouds it uses (ours omit oracle). Default the missing
+// blocks for the supported clouds (AWS, Azure, GCP, OCI) so the credential checks below
+// never read a property of undefined.
+config.credentials = config.credentials || {};
+['aws', 'azure', 'google', 'oracle'].forEach(function(cloud) {
+    config.credentials[cloud] = config.credentials[cloud] || {};
+});
 
 function loadHelperFile(path) {
     try {
@@ -238,30 +251,9 @@ if (config.credentials.aws.credential_file && (!settings.cloud || (settings.clou
         keyValue: config.credentials.oracle.key_value,
         region: config.credentials.oracle.region,
     };
-} else if (config.credentials.github.credential_file && (!settings.cloud || (settings.cloud == 'github'))) {
-    settings.cloud = 'github';
-    cloudConfig = loadHelperFile(config.credentials.github.credential_file);
-} else if (config.credentials.github.token && (!settings.cloud || (settings.cloud == 'github'))) {
-    settings.cloud = 'github';
-    checkRequiredKeys(config.credentials.github, ['url', 'login']);
-    cloudConfig = {
-        token: config.credentials.github.token,
-        url: config.credentials.github.url,
-        organization: config.credentials.github.organization,
-        login: config.credentials.github.login
-    };
-} else if (config.credentials.alibaba.credential_file && (!settings.cloud || (settings.cloud == 'alibaba'))) {
-    settings.cloud = 'alibaba';
-    cloudConfig = loadHelperFile(config.credentials.alibaba.credential_file);
-} else if (config.credentials.alibaba.access_key_id && (!settings.cloud || (settings.cloud == 'alibaba'))) {
-    settings.cloud = 'alibaba';
-    checkRequiredKeys(config.credentials.alibaba, ['access_key_secret']);
-    cloudConfig = {
-        accessKeyId: config.credentials.alibaba.access_key_id,
-        accessKeySecret: config.credentials.alibaba.access_key_secret
-    };
 } else {
-    console.error('ERROR: Config file does not contain any valid credential configs.');
+    // GitHub and Alibaba credential branches were removed: Seconize supports AWS, Azure, GCP and OCI only.
+    console.error('ERROR: Config file does not contain valid credentials for a supported cloud (aws, azure, google, oracle).');
     process.exit(1);
 }
 
